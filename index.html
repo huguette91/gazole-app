@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gazole">
+<title>Brent & Gazole</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d0f14;--bg2:#13161d;--bg3:#1a1e28;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8eaf0;--muted:#7a8299;
+  --accent:#4f8ef7;--orange:#f7894f;--green:#3dd68c;
+  --red:#f75f5f;--purple:#b07ff7;--yellow:#f7d44f;
+  --mono:'DM Mono',monospace;--sans:'Syne',sans-serif;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overscroll-behavior:none;font-size:14px;}
+.app{display:flex;flex-direction:column;height:100dvh;}
+.topbar{padding:12px 18px 10px;padding-top:calc(12px + var(--safe-top));background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.topbar-row{display:flex;align-items:center;justify-content:space-between;}
+.app-name{font-size:18px;font-weight:800;}
+.app-name span{color:var(--accent);}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.badge{font-size:9px;font-family:var(--mono);padding:3px 8px;border-radius:20px;background:rgba(79,142,247,0.12);color:var(--accent);border:1px solid rgba(79,142,247,0.25);}
+.date-line{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:3px;}
+.sync-btn{display:flex;align-items:center;gap:5px;background:rgba(61,214,140,0.1);border:1px solid rgba(61,214,140,0.25);color:var(--green);font-family:var(--mono);font-size:9px;font-weight:500;padding:4px 10px;border-radius:20px;cursor:pointer;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.05em;}
+.sync-btn:hover{background:rgba(61,214,140,0.18);}
+.sync-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.sync-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.sync-btn.loading svg{animation:spin 0.8s linear infinite;}
+.status-bar{font-size:9px;font-family:var(--mono);padding:5px 18px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.status-bar.ok{color:var(--green);}
+.status-bar.err{color:var(--red);}
+.status-bar.loading{color:var(--yellow);}
+.status-bar.hidden{display:none;}
+.status-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;padding-bottom:calc(72px + var(--safe-bottom));}
+.content::-webkit-scrollbar{display:none;}
+.page{display:none;}
+.page.active{display:block;}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 12px 10px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.blue::before{background:var(--accent);}
+.kpi.orange::before{background:var(--orange);}
+.kpi.green::before{background:var(--green);}
+.kpi.purple::before{background:var(--purple);}
+.kpi-label{font-size:9px;font-family:var(--mono);color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:5px;padding-right:22px;}
+.kpi-value{font-size:20px;font-weight:800;font-family:var(--mono);line-height:1;}
+.kpi-sub{font-size:9px;color:var(--muted);font-family:var(--mono);margin-top:3px;}
+.kpi-delta{font-size:9px;font-family:var(--mono);margin-top:2px;}
+.up{color:var(--red);}.dn{color:var(--green);}.nu{color:var(--muted);}
+.info-btn{position:absolute;top:10px;right:10px;width:18px;height:18px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);color:var(--muted);font-size:10px;font-weight:700;font-family:var(--mono);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.info-btn.inline{position:static;flex-shrink:0;}
+.info-btn.on{background:rgba(79,142,247,0.15);border-color:var(--accent);color:var(--accent);}
+.notice{display:none;margin-top:8px;background:var(--bg3);border-left:2px solid var(--accent);border-radius:0 8px 8px 0;padding:10px 12px;font-size:11px;color:var(--muted);line-height:1.65;}
+.notice.open{display:block;}
+.notice strong{color:var(--text);font-weight:700;}
+.notice .good{color:var(--green);}
+.notice .warn{color:var(--yellow);}
+.notice .bad{color:var(--red);}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px;gap:8px;}
+.card-title{font-size:13px;font-weight:700;flex:1;}
+.card-sub{font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:10px;}
+.leg{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+.leg span{display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--muted);}
+.leg-sq{width:12px;height:3px;border-radius:1px;display:inline-block;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.stat{background:var(--bg3);border-radius:10px;padding:10px 12px;}
+.stat-label{font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:0.06em;margin-bottom:3px;}
+.stat-val{font-size:18px;font-weight:800;font-family:var(--mono);}
+.conf-section{background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:12px;border-left:2px solid var(--yellow);}
+.conf-title{font-size:11px;font-weight:700;margin-bottom:10px;}
+.conf-row{margin-bottom:8px;}
+.conf-lrow{display:flex;justify-content:space-between;font-size:10px;font-family:var(--mono);color:var(--muted);margin-bottom:4px;}
+.conf-track{height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;}
+.conf-fill{height:100%;border-radius:3px;}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.tag{font-size:9px;font-family:var(--mono);padding:2px 7px;border-radius:20px;}
+.tag-ok{background:rgba(61,214,140,0.12);color:var(--green);border:1px solid rgba(61,214,140,0.2);}
+.tag-warn{background:rgba(247,212,79,0.10);color:var(--yellow);border:1px solid rgba(247,212,79,0.2);}
+.tag-bad{background:rgba(247,95,95,0.10);color:var(--red);border:1px solid rgba(247,95,95,0.2);}
+.ftable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;margin-top:10px;}
+.ftable th{text-align:left;padding:5px 4px;color:var(--muted);font-size:9px;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:400;}
+.ftable th:not(:first-child){text-align:right;}
+.ftable td{padding:6px 4px;border-bottom:1px solid var(--border);}
+.ftable td:not(:first-child){text-align:right;}
+.ftable tr:last-child td{border-bottom:none;}
+.formula{font-family:var(--mono);font-size:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--orange);margin-top:10px;line-height:1.7;white-space:pre-line;}
+.cfg-field{margin-bottom:14px;}
+.cfg-label{font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+.cfg-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:12px;padding:10px 12px;border-radius:10px;outline:none;transition:border-color 0.2s;}
+.cfg-input:focus{border-color:var(--accent);}
+.cfg-input::placeholder{color:var(--muted);}
+.cfg-save{width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;}
+.cfg-note{font-size:9px;color:var(--muted);font-family:var(--mono);margin-top:12px;line-height:1.6;}
+.bottomnav{position:fixed;bottom:0;left:0;right:0;padding-bottom:var(--safe-bottom);background:var(--bg2);border-top:1px solid var(--border);display:flex;z-index:50;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px;cursor:pointer;border:none;background:none;color:var(--muted);font-family:var(--sans);font-size:9px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;transition:color 0.15s;}
+.nav-btn.active{color:var(--accent);}
+.nav-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.nav-btn.configured{color:var(--green);}
+</style>
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIkJyZW50ICYgR2F6b2xlIiwgInNob3J0X25hbWUiOiAiR2F6b2xlIiwgImRlc2NyaXB0aW9uIjogIlN1aXZpIGR1IHByaXggZHUgQnJlbnQgZXQgZHUgZ2F6b2xlIGVuIEZyYW5jZSIsICJzdGFydF91cmwiOiAiLi9pbmRleC5odG1sIiwgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwZDBmMTQiLCAidGhlbWVfY29sb3IiOiAiIzBkMGYxNCIsICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdCIsICJpY29ucyI6IFtdfQ==">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="app-name">Brent<span> & </span>Gazole</div>
+      <div class="topbar-right">
+        <div class="badge" id="badge-lag">OLS · LAG 16J</div>
+        <button class="sync-btn" id="syncBtn">
+          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Sync
+        </button>
+      </div>
+    </div>
+    <div class="date-line" id="dateRange">Chargement...</div>
+  </div>
+  <div class="status-bar hidden" id="statusBar"><div class="status-dot"></div><span id="statusMsg"></span></div>
+
+  <div class="content" id="content">
+
+    <!-- APERCU -->
+    <div class="page active" id="page-apercu">
+      <div class="kpi-grid">
+        <div class="kpi orange">
+          <div class="kpi-label">Prix gazole</div>
+          <div class="kpi-value" id="kpi-gazole">—</div>
+          <div class="kpi-sub" id="kpi-gazole-sub">—</div>
+          <div class="kpi-delta" id="kpi-gazole-delta"></div>
+          <button class="info-btn" data-n="n-gazole">i</button>
+          <div class="notice" id="n-gazole"><strong>Ce que c'est :</strong> prix moyen à la pompe en France (gazole).<br><br><strong>Bon signe :</strong> <span class="good">une baisse = moins de pression sur transport et logistique.</span></div>
+        </div>
+        <div class="kpi blue">
+          <div class="kpi-label">Brent EUR</div>
+          <div class="kpi-value" id="kpi-brent">—</div>
+          <div class="kpi-sub" id="kpi-brent-sub">—</div>
+          <div class="kpi-delta" id="kpi-brent-delta"></div>
+          <button class="info-btn" data-n="n-brent">i</button>
+          <div class="notice" id="n-brent"><strong>Ce que c'est :</strong> pétrole brut Brent converti en €. Principal déterminant du prix pompe avec décalage.<br><br><strong>Bon signe :</strong> <span class="good">Brent en baisse → pompe en baisse plus tard.</span></div>
+        </div>
+        <div class="kpi green">
+          <div class="kpi-label">Corrélation</div>
+          <div class="kpi-value" id="kpi-corr">—</div>
+          <div class="kpi-sub">Pearson · lag optimal</div>
+          <div class="kpi-delta" id="kpi-corr-delta"></div>
+          <button class="info-btn" data-n="n-corr">i</button>
+          <div class="notice" id="n-corr"><strong>Ce que c'est :</strong> mesure si le Brent€ prédit le gazole (de -1 à +1). Proche de 1 = modèle fiable.<br><br><strong>Bon signe :</strong> <span class="good">proche de 1 = prévisions fiables.</span></div>
+        </div>
+        <div class="kpi purple">
+          <div class="kpi-label">Volatilité</div>
+          <div class="kpi-value" id="kpi-volat">—</div>
+          <div class="kpi-sub" id="kpi-volat-sub">—</div>
+          <div class="kpi-delta nu">Effet tampon fiscal</div>
+          <button class="info-btn" data-n="n-volat">i</button>
+          <div class="notice" id="n-volat"><strong>Ce que c'est :</strong> le Brent bouge X× plus fort que le gazole. Les taxes fixes absorbent une partie des chocs.<br><br><strong>Bon signe :</strong> <span class="good">ratio > 1 = protection des pires oscillations pétrolières.</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Prix à la pompe et Brent</div><button class="info-btn inline" data-n="n-ch-apercu">i</button></div>
+        <div class="card-sub">Axe gauche = Brent €/baril · axe droit = Gazole €/L</div>
+        <div class="notice" id="n-ch-apercu">Le <strong>double axe</strong> permet d'afficher deux séries aux unités différentes. Le décalage entre les courbes illustre le <strong>lag calculé</strong> : le Brent monte en premier, la pompe suit.</div>
+        <div class="leg"><span><span class="leg-sq" style="background:#4f8ef7"></span>Brent €/baril</span><span><span class="leg-sq" style="background:#f7894f"></span>Gazole €/L</span></div>
+        <div style="position:relative;height:220px"><canvas id="cApercu"></canvas></div>
+      </div>
+    </div>
+
+    <!-- EVOLUTION -->
+    <div class="page" id="page-evolution">
+      <div class="card">
+        <div class="card-head"><div class="card-title">Performance relative — base 100</div><button class="info-btn inline" data-n="n-b100">i</button></div>
+        <div class="card-sub" id="sub-b100">Départ commun à 100</div>
+        <div class="notice" id="n-b100">On ramène les deux séries à 100 au départ pour comparer leur évolution <strong>proportionnelle</strong>.<br><br><strong>Bon signe :</strong> <span class="good">le Brent monte toujours plus vite — l'écart = protection des taxes fixes.</span></div>
+        <div class="leg"><span><span class="leg-sq" style="background:#4f8ef7"></span><span id="leg-brent-perf">Brent</span></span><span><span class="leg-sq" style="background:#f7894f"></span><span id="leg-gazole-perf">Gazole</span></span></div>
+        <div style="position:relative;height:230px"><canvas id="cBase100"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Variations journalières Brent (%)</div><button class="info-btn inline" data-n="n-delta">i</button></div>
+        <div class="card-sub" id="sub-delta">Pics extrêmes</div>
+        <div class="notice" id="n-delta">Chaque barre = variation du Brent par rapport au jour précédent.<br><span class="good">Bleu = hausse</span>, <span class="bad">rouge = baisse</span>.<br><br>Les barres larges signalent des chocs qui se répercuteront à la pompe <strong>après le lag calculé</strong>.</div>
+        <div style="position:relative;height:170px"><canvas id="cDelta"></canvas></div>
+      </div>
+    </div>
+
+    <!-- CORRELATION -->
+    <div class="page" id="page-correlation">
+      <div class="card">
+        <div class="card-head"><div class="card-title">Corrélation glissante 30 jours</div><button class="info-btn inline" data-n="n-corrgl">i</button></div>
+        <div class="card-sub">Pearson Brent€ / Gazole · fenêtre mobile</div>
+        <div class="notice" id="n-corrgl">On recalcule la corrélation chaque jour sur les <strong>30 derniers jours</strong>.<br><br><span class="good">Proche de +1 = relation forte.</span><br><span class="warn">Proche de 0 = découplage temporaire.</span><br><span class="bad">Négatif = choc exogène.</span></div>
+        <div class="leg"><span><span class="leg-sq" style="background:#b07ff7"></span>Corrélation 30j</span><span><span class="leg-sq" style="background:rgba(247,95,95,0.5)"></span>Seuil zéro</span></div>
+        <div style="position:relative;height:200px"><canvas id="cCorr"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Corrélation globale</div>
+        <div style="font-size:42px;font-weight:800;font-family:var(--mono);color:var(--accent);margin:8px 0 2px" id="corr-global-val">—</div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--mono)" id="corr-global-sub">—</div>
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-label">Lag optimal</div><div class="stat-val" style="color:var(--accent)" id="stat-lag">—</div></div>
+          <div class="stat"><div class="stat-label">Corr. lag opt.</div><div class="stat-val" style="color:var(--green)" id="stat-corr-lag">—</div></div>
+          <div class="stat"><div class="stat-label">Max 30j</div><div class="stat-val" style="color:var(--purple)" id="stat-corr-max">—</div></div>
+          <div class="stat"><div class="stat-label">Min 30j</div><div class="stat-val" style="color:var(--red)" id="stat-corr-min">—</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Corrélation par lag (0–19 jours)</div><button class="info-btn inline" data-n="n-lag">i</button></div>
+        <div class="card-sub" id="sub-lag">Maximum calculé dynamiquement</div>
+        <div class="notice" id="n-lag">Répond à : <strong>combien de jours après une variation du Brent la voit-on à la pompe ?</strong><br><br><span class="good">Le pic vert indique le délai optimal.</span></div>
+        <div style="position:relative;height:160px"><canvas id="cLag"></canvas></div>
+      </div>
+    </div>
+
+    <!-- PREVISION -->
+    <div class="page" id="page-prevision">
+      <div class="conf-section">
+        <div class="conf-title">Méthode et niveau de confiance</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.65;margin-bottom:12px">Modèle <strong style="color:var(--text)">OLS</strong> : le Brent à t−<span id="conf-lag">?</span> est déjà <em>connu</em>. R² = <span id="conf-r2">—</span></div>
+        <div class="conf-row">
+          <div class="conf-lrow"><span>Fiabilité structurelle (R²)</span><span style="color:var(--accent)" id="conf-r2-pct">—</span></div>
+          <div class="conf-track"><div class="conf-fill" id="conf-r2-bar" style="background:#4f8ef7"></div></div>
+        </div>
+        <div class="conf-row">
+          <div class="conf-lrow"><span>Stabilité corrélation récente</span><span id="conf-stab-pct">—</span></div>
+          <div class="conf-track"><div class="conf-fill" id="conf-stab-bar"></div></div>
+        </div>
+        <div class="conf-row" style="margin-bottom:0">
+          <div class="conf-lrow"><span>Confiance globale J+10</span><span id="conf-global-pct">—</span></div>
+          <div class="conf-track"><div class="conf-fill" id="conf-global-bar"></div></div>
+        </div>
+        <div class="tags" id="conf-tags"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Prévision gazole 10 jours</div>
+        <div class="card-sub" id="sub-forecast">OLS · IC 95%</div>
+        <div class="leg"><span><span class="leg-sq" style="background:#f7894f"></span>Historique</span><span><span class="leg-sq" style="background:#3dd68c"></span>Prévision</span><span><span class="leg-sq" style="background:rgba(61,214,140,0.35)"></span>IC 95%</span></div>
+        <div style="position:relative;height:210px"><canvas id="cForecast"></canvas></div>
+        <div style="overflow-x:auto;margin-top:12px">
+          <table class="ftable">
+            <thead><tr><th>Date</th><th>Brent€</th><th>Prévu</th><th>IC bas</th><th>IC haut</th><th>Tend.</th></tr></thead>
+            <tbody id="ftbody"></tbody>
+          </table>
+        </div>
+        <div class="formula" id="formula-text">En attente des données…</div>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="page" id="page-config">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:6px">⚙️ Configuration GitHub</div>
+        <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:16px">Connexion au repo privé pour lire le CSV</div>
+        <div class="cfg-field">
+          <div class="cfg-label">Token GitHub (Personal Access Token)</div>
+          <input class="cfg-input" type="password" id="cfg-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+        </div>
+        <div class="cfg-field">
+          <div class="cfg-label">Repo (utilisateur/nom-du-repo)</div>
+          <input class="cfg-input" type="text" id="cfg-repo" placeholder="huguette91/prix-gasoil">
+        </div>
+        <div class="cfg-field">
+          <div class="cfg-label">Chemin du fichier CSV dans le repo</div>
+          <input class="cfg-input" type="text" id="cfg-path" placeholder="data/historique.csv">
+        </div>
+        <button class="cfg-save" id="cfg-save-btn">Enregistrer et synchroniser</button>
+        <div class="cfg-note">🔒 Le token est stocké uniquement dans le localStorage de cet appareil. Il n'est jamais envoyé ailleurs qu'à l'API GitHub.<br><br>Scope requis : <strong style="color:var(--text)">repo</strong> (lecture seule suffit).</div>
+      </div>
+    </div>
+
+  </div>
+
+  <nav class="bottomnav">
+    <button class="nav-btn active" data-page="apercu">
+      <svg viewBox="0 0 24 24"><rect x="3" y="13" width="4" height="8" rx="1"/><rect x="10" y="9" width="4" height="12" rx="1"/><rect x="17" y="5" width="4" height="16" rx="1"/></svg>Aperçu
+    </button>
+    <button class="nav-btn" data-page="evolution">
+      <svg viewBox="0 0 24 24"><polyline points="3,17 8,12 13,15 21,7"/><polyline points="17,7 21,7 21,11"/></svg>Évolution
+    </button>
+    <button class="nav-btn" data-page="correlation">
+      <svg viewBox="0 0 24 24"><circle cx="5" cy="19" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><line x1="6.5" y1="17.5" x2="10.5" y2="13.5"/><line x1="13.5" y1="10.5" x2="17.5" y2="6.5"/></svg>Corrélation
+    </button>
+    <button class="nav-btn" data-page="prevision">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12,7 12,12 15,15"/></svg>Prévision
+    </button>
+    <button class="nav-btn" data-page="config" id="nav-config">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Config
+    </button>
+  </nav>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// CONFIG
+const CFG={
+  get token(){return localStorage.getItem('gh_token')||'';},
+  get repo(){return localStorage.getItem('gh_repo')||'huguette91/prix-gasoil';},
+  get path(){return localStorage.getItem('gh_path')||'data/historique.csv';},
+  set token(v){localStorage.setItem('gh_token',v);},
+  set repo(v){localStorage.setItem('gh_repo',v);},
+  set path(v){localStorage.setItem('gh_path',v);}
+};
+
+let DATA=[], CHARTS={}, OPT_LAG=16;
+
+const DEF={
+  responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,backgroundColor:'rgba(13,15,20,0.95)',titleColor:'#7a8299',bodyColor:'#e8eaf0',borderColor:'rgba(255,255,255,0.08)',borderWidth:1}},
+  scales:{x:{ticks:{autoSkip:true,maxTicksLimit:6,font:{size:9},color:'#7a8299'},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{font:{size:9},color:'#7a8299'},grid:{color:'rgba(255,255,255,0.04)'}}}
+};
+
+// FETCH
+async function fetchCSV(){
+  if(!CFG.token){showStatus('Token manquant — configurez dans ⚙️ Config','err');return;}
+  setLoading(true);
+  showStatus('Connexion à GitHub…','loading');
+  try{
+    const url=`https://api.github.com/repos/${CFG.repo}/contents/${CFG.path}`;
+    const res=await fetch(url,{headers:{Authorization:`token ${CFG.token}`,Accept:'application/vnd.github.v3.raw'}});
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.message||`HTTP ${res.status}`);}
+    const text=await res.text();
+    parseCSV(text);
+    showStatus(`✓ ${DATA.length} observations · ${fmtDate(DATA[DATA.length-1].date)}`,'ok');
+    rebuildAll();
+  }catch(e){showStatus(`Erreur : ${e.message}`,'err');}
+  finally{setLoading(false);}
+}
+
+function parseCSV(text){
+  const lines=text.trim().split('\n').filter(l=>l&&!l.startsWith('sep='));
+  const h=lines[0].split(';').map(s=>s.trim());
+  const iD=h.indexOf('date'),iG=h.indexOf('prix_gazole'),iBu=h.indexOf('brent_usd'),iBe=h.indexOf('brent_eur');
+  DATA=lines.slice(1).map(l=>{const c=l.split(';');return{date:c[iD]?.trim(),g:parseFloat(c[iG]),busd:parseFloat(c[iBu]),beur:parseFloat(c[iBe])};}).filter(r=>r.date&&!isNaN(r.g)&&!isNaN(r.beur));
+}
+
+// MATHS
+function pearson(a,b){
+  const n=a.length;if(n<3)return 0;
+  const ma=a.reduce((s,v)=>s+v,0)/n,mb=b.reduce((s,v)=>s+v,0)/n;
+  let num=0,da=0,db=0;
+  for(let i=0;i<n;i++){const xa=a[i]-ma,xb=b[i]-mb;num+=xa*xb;da+=xa*xa;db+=xb*xb;}
+  return(da*db===0)?0:num/Math.sqrt(da*db);
+}
+function cv(arr){const n=arr.length,m=arr.reduce((s,v)=>s+v,0)/n,std=Math.sqrt(arr.reduce((s,v)=>s+(v-m)**2,0)/n);return std/m*100;}
+function logReturns(data,key){return data.slice(1).map((d,i)=>Math.log(d[key]/data[i][key]));}
+function bestLag(data,maxLag=19){
+  const dB=logReturns(data,'beur'),dG=logReturns(data,'g');
+  let best={lag:0,r:-Infinity};
+  for(let lag=0;lag<=maxLag;lag++){const b=[],g=[];for(let i=lag;i<dB.length;i++){b.push(dB[i-lag]);g.push(dG[i]);}const r=pearson(b,g);if(r>best.r)best={lag,r};}
+  return best;
+}
+function rollingCorr(data,lag,window=30){
+  const dB=logReturns(data,'beur'),dG=logReturns(data,'g');
+  const out=[];
+  for(let i=lag+window-1;i<dB.length;i++){
+    const b=[],g=[];for(let j=i-window+1;j<=i;j++){b.push(dB[j-lag]??NaN);g.push(dG[j]);}
+    if(b.some(isNaN)){out.push({date:data[i+1].date,v:null});continue;}
+    out.push({date:data[i+1].date,v:+pearson(b,g).toFixed(3)});
+  }
+  return out;
+}
+function olsRegression(X,Y){
+  const n=X.length,mX=X.reduce((s,v)=>s+v,0)/n,mY=Y.reduce((s,v)=>s+v,0)/n;
+  let num=0,den=0;
+  for(let i=0;i<n;i++){num+=(X[i]-mX)*(Y[i]-mY);den+=(X[i]-mX)**2;}
+  const b1=num/den,b0=mY-b1*mX;
+  const resid=Y.map((y,i)=>y-(b0+b1*X[i]));
+  const sse=resid.reduce((s,r)=>s+r*r,0);
+  const se=Math.sqrt(sse/(n-2));
+  const r2=1-sse/Y.reduce((s,y)=>s+(y-mY)**2,0);
+  return{b0,b1,se,r2};
+}
+function fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});}
+function shortDate(d){return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}).slice(0,5);}
+function addDays(d,n){const dt=new Date(d);dt.setDate(dt.getDate()+n);return dt.toISOString().slice(0,10);}
+
+// REBUILD
+function rebuildAll(){
+  if(!DATA.length)return;
+  const{lag:optLag,r:corrLag}=bestLag(DATA);
+  OPT_LAG=optLag;
+  document.getElementById('badge-lag').textContent=`OLS · LAG ${optLag}J`;
+  document.getElementById('conf-lag').textContent=optLag;
+  const first=DATA[0],last=DATA[DATA.length-1];
+  document.getElementById('dateRange').textContent=`${fmtDate(first.date)} → ${fmtDate(last.date)} · ${DATA.length} observations`;
+
+  const g0=first.g,gN=last.g,b0=first.beur,bN=last.beur;
+  const gPct=(gN-g0)/g0*100,bPct=(bN-b0)/b0*100;
+  const cvG=cv(DATA.map(d=>d.g)),cvB=cv(DATA.map(d=>d.beur));
+  const corrGlobal=pearson(DATA.map(d=>d.beur),DATA.map(d=>d.g));
+  const rolling=rollingCorr(DATA,optLag,30);
+  const validR=rolling.filter(r=>r.v!==null).map(r=>r.v);
+  const corrMax=Math.max(...validR),corrMin=Math.min(...validR),corrRecent=validR[validR.length-1]??0;
+
+  // KPIs
+  T('kpi-gazole',`${gN.toLocaleString('fr-FR',{minimumFractionDigits:3})}€`);
+  T('kpi-gazole-sub',`/litre · ${fmtDate(last.date)}`);
+  delta('kpi-gazole-delta',gPct,gN>g0);
+  T('kpi-brent',`${bN.toLocaleString('fr-FR',{minimumFractionDigits:2})}€`);
+  T('kpi-brent-sub',`/baril · ${fmtDate(last.date)}`);
+  delta('kpi-brent-delta',bPct,bN>b0);
+  T('kpi-corr',corrGlobal.toFixed(3));
+  H('kpi-corr-delta',`<span class="${corrGlobal>0.7?'dn':corrGlobal>0.4?'nu':'up'}">${corrGlobal>0.7?'Corrélation forte':corrGlobal>0.4?'Modérée':'Faible'}</span>`);
+  T('kpi-volat',`${(cvB/cvG).toFixed(1)}×`);
+  T('kpi-volat-sub',`CV ${cvB.toFixed(1)}% vs ${cvG.toFixed(1)}%`);
+
+  // Graphiques
+  const labels=DATA.map(d=>shortDate(d.date));
+  DC('cApercu');CHARTS.cApercu=new Chart(ge('cApercu'),{type:'line',data:{labels,datasets:[
+    {label:'Brent €/baril',data:DATA.map(d=>d.beur),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.07)',fill:true,tension:0.35,pointRadius:0,borderWidth:2,yAxisID:'y'},
+    {label:'Gazole €/L',data:DATA.map(d=>d.g),borderColor:'#f7894f',backgroundColor:'rgba(247,137,79,0.07)',fill:true,tension:0.35,pointRadius:0,borderWidth:2,yAxisID:'y1'}
+  ]},options:{...DEF,scales:{x:DEF.scales.x,y:{position:'left',ticks:{font:{size:9},color:'#4f8ef7',callback:v=>v+'€'},grid:{color:'rgba(255,255,255,0.04)'}},y1:{position:'right',ticks:{font:{size:9},color:'#f7894f',callback:v=>+v.toFixed(2)+'€'},grid:{display:false}}}}});
+
+  const bi=DATA.map(d=>+(d.beur/b0*100).toFixed(2)),gi=DATA.map(d=>+(d.g/g0*100).toFixed(2));
+  T('sub-b100',`Départ commun à 100 le ${fmtDate(first.date)}`);
+  T('leg-brent-perf',`Brent ${bPct>0?'+':''}${bPct.toFixed(1)}%`);
+  T('leg-gazole-perf',`Gazole ${gPct>0?'+':''}${gPct.toFixed(1)}%`);
+  DC('cBase100');CHARTS.cBase100=new Chart(ge('cBase100'),{type:'line',data:{labels,datasets:[
+    {label:'Brent',data:bi,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.07)',fill:true,tension:0.35,pointRadius:0,borderWidth:2},
+    {label:'Gazole',data:gi,borderColor:'#f7894f',backgroundColor:'rgba(247,137,79,0.07)',fill:true,tension:0.35,pointRadius:0,borderWidth:2}
+  ]},options:DEF});
+
+  const deltas=DATA.map((d,i)=>i===0?0:+((d.beur-DATA[i-1].beur)/DATA[i-1].beur*100).toFixed(2));
+  const maxD=Math.max(...deltas),minD=Math.min(...deltas);
+  T('sub-delta',`Pics : ${maxD>0?'+':''}${maxD.toFixed(1)}% · ${minD.toFixed(1)}%`);
+  DC('cDelta');CHARTS.cDelta=new Chart(ge('cDelta'),{type:'bar',data:{labels,datasets:[{label:'Δ Brent %',data:deltas,backgroundColor:deltas.map(v=>v>=0?'rgba(79,142,247,0.75)':'rgba(247,95,95,0.75)'),borderWidth:0}]},options:{...DEF,scales:{x:{ticks:{autoSkip:true,maxTicksLimit:6,font:{size:9},color:'#7a8299'},grid:{display:false}},y:{ticks:{font:{size:9},color:'#7a8299',callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+
+  DC('cCorr');CHARTS.cCorr=new Chart(ge('cCorr'),{type:'line',data:{labels:rolling.map(r=>shortDate(r.date)),datasets:[
+    {label:'Corrélation 30j',data:rolling.map(r=>r.v),borderColor:'#b07ff7',backgroundColor:'rgba(176,127,247,0.1)',fill:true,tension:0.4,pointRadius:2,pointBackgroundColor:'#b07ff7',borderWidth:2,spanGaps:true},
+    {label:'Zéro',data:Array(rolling.length).fill(0),borderColor:'rgba(247,95,95,0.45)',borderWidth:1,borderDash:[4,3],pointRadius:0,fill:false}
+  ]},options:{...DEF,scales:{x:{ticks:{font:{size:9},color:'#7a8299'},grid:{color:'rgba(255,255,255,0.04)'}},y:{min:-1,max:1,ticks:{font:{size:9},color:'#7a8299',callback:v=>v.toFixed(1)},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+
+  T('corr-global-val',corrGlobal.toFixed(3));
+  T('corr-global-sub',`Corrélation globale · à lag ${optLag}j → ${corrLag.toFixed(3)}`);
+  T('stat-lag',`${optLag} j`);T('stat-corr-lag',corrLag.toFixed(3));T('stat-corr-max',corrMax.toFixed(3));T('stat-corr-min',corrMin.toFixed(3));
+
+  const lagCorrs=[];
+  const dBall=logReturns(DATA,'beur'),dGall=logReturns(DATA,'g');
+  for(let lag=0;lag<=19;lag++){const b=[],g=[];for(let i=lag;i<dBall.length;i++){b.push(dBall[i-lag]);g.push(dGall[i]);}lagCorrs.push(+pearson(b,g).toFixed(4));}
+  T('sub-lag',`Maximum à ${optLag}j, r=${corrLag.toFixed(3)}`);
+  DC('cLag');CHARTS.cLag=new Chart(ge('cLag'),{type:'bar',data:{labels:lagCorrs.map((_,i)=>`${i}j`),datasets:[{label:'Corrélation',data:lagCorrs,backgroundColor:lagCorrs.map((_,i)=>i===optLag?'#3dd68c':'rgba(79,142,247,0.55)'),borderWidth:0}]},options:{...DEF,scales:{x:{ticks:{font:{size:9},color:'#7a8299'},grid:{display:false}},y:{min:Math.max(0,Math.min(...lagCorrs)-0.05),ticks:{font:{size:9},color:'#7a8299',callback:v=>v.toFixed(2)},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+
+  // OLS + prévisions
+  const X=[],Y=[];
+  for(let i=optLag;i<DATA.length;i++){X.push(DATA[i-optLag].beur);Y.push(DATA[i].g);}
+  const{b0:ob0,b1:ob1,se:ose,r2}=olsRegression(X,Y);
+  const FC=[];
+  for(let i=1;i<=10;i++){
+    const tDate=addDays(last.date,i);
+    const bIdx=DATA.length-optLag+i-1;
+    if(bIdx<0||bIdx>=DATA.length)continue;
+    const bVal=DATA[bIdx].beur;
+    const pred=ob0+ob1*bVal;
+    FC.push({d:shortDate(tDate),g:+pred.toFixed(4),lo:+(pred-1.96*ose).toFixed(4),hi:+(pred+1.96*ose).toFixed(4),b:+bVal.toFixed(2)});
+  }
+
+  const r2Pct=+(r2*100).toFixed(1);
+  const stabPct=+Math.max(0,(corrRecent+1)/2*100).toFixed(1);
+  const globalConf=+(r2Pct*0.5+stabPct*0.5).toFixed(1);
+  T('conf-r2',r2.toFixed(3));
+  T('conf-r2-pct',r2Pct+'%');bar('conf-r2-bar',r2Pct);
+  T('conf-stab-pct',stabPct+'%');
+  ge('conf-stab-pct').style.color=stabPct>60?'var(--green)':stabPct>30?'var(--yellow)':'var(--red)';
+  ge('conf-stab-bar').style.background=stabPct>60?'#3dd68c':stabPct>30?'#f7d44f':'#f75f5f';
+  bar('conf-stab-bar',stabPct);
+  T('conf-global-pct',globalConf+'%');
+  const cc=globalConf>60?'var(--green)':globalConf>40?'var(--yellow)':'var(--orange)';
+  ge('conf-global-pct').style.color=cc;ge('conf-global-bar').style.background=cc;
+  bar('conf-global-bar',globalConf);
+  const tags=[`<span class="tag tag-ok">Brent connu à t-${optLag} ✓</span>`];
+  if(stabPct<50)tags.push('<span class="tag tag-warn">Corr. récente instable</span>');
+  if(corrRecent<0)tags.push('<span class="tag tag-bad">Découplage en cours</span>');
+  ge('conf-tags').innerHTML=tags.join('');
+  T('formula-text',`Gazole(t) = ${ob0.toFixed(4)} ${ob1>=0?'+':''}${ob1.toFixed(5)} × Brent€(t−${optLag})\nIC 95% = ŷ ± 1.96 × ${ose.toFixed(4)}`);
+  T('sub-forecast',`OLS lag ${optLag}j · IC 95% · R²=${r2.toFixed(3)} · à partir du ${fmtDate(last.date)}`);
+
+  const tb=ge('ftbody');tb.innerHTML='';
+  FC.forEach((f,i)=>{const prev=i===0?last.g:FC[i-1].g;const diff=f.g-prev;const arr=diff>0.005?`<span style="color:var(--red)">▲</span>`:diff<-0.005?`<span style="color:var(--green)">▼</span>`:`<span style="color:var(--muted)">→</span>`;tb.innerHTML+=`<tr><td style="color:var(--accent)">${f.d}</td><td>${f.b.toFixed(1)}€</td><td style="font-weight:700">${f.g.toFixed(3)}€</td><td style="color:var(--muted)">${f.lo.toFixed(3)}</td><td style="color:var(--muted)">${f.hi.toFixed(3)}</td><td>${arr}</td></tr>`;});
+
+  const last8=DATA.slice(-8);
+  const fAllL=[...last8.map(d=>shortDate(d.date)),...FC.map(f=>f.d)];
+  const histLine=[...last8.map(d=>d.g),...Array(FC.length).fill(null)];
+  const foreL=[...Array(last8.length-1).fill(null),last8[last8.length-1].g,...FC.map(f=>f.g)];
+  const hiL=[...Array(last8.length).fill(null),...FC.map(f=>f.hi)];
+  const loL=[...Array(last8.length).fill(null),...FC.map(f=>f.lo)];
+  DC('cForecast');CHARTS.cForecast=new Chart(ge('cForecast'),{type:'line',data:{labels:fAllL,datasets:[
+    {label:'Historique',data:histLine,borderColor:'#f7894f',backgroundColor:'transparent',tension:0.3,pointRadius:0,borderWidth:2.5},
+    {label:'Prévision',data:foreL,borderColor:'#3dd68c',backgroundColor:'rgba(61,214,140,0.08)',fill:false,tension:0.3,pointRadius:3,pointBackgroundColor:'#3dd68c',borderWidth:2.5},
+    {label:'IC haut',data:hiL,borderColor:'rgba(61,214,140,0.3)',backgroundColor:'rgba(61,214,140,0.07)',fill:'+1',tension:0.3,pointRadius:0,borderWidth:1,borderDash:[4,3]},
+    {label:'IC bas',data:loL,borderColor:'rgba(61,214,140,0.3)',fill:false,tension:0.3,pointRadius:0,borderWidth:1,borderDash:[4,3]}
+  ]},options:{...DEF,scales:{x:{ticks:{font:{size:9},color:'#7a8299'},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{font:{size:9},color:'#7a8299',callback:v=>v.toFixed(2)+'€'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+}
+
+// UTILS
+function ge(id){return document.getElementById(id);}
+function T(id,txt){const e=ge(id);if(e)e.textContent=txt;}
+function H(id,html){const e=ge(id);if(e)e.innerHTML=html;}
+function bar(id,pct){const e=ge(id);if(e)e.style.width=Math.min(100,Math.max(0,pct))+'%';}
+function DC(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
+function delta(id,pct,up){H(id,`<span class="${up?'up':'dn'}">${up?'▲':'▼'} ${up?'+':''}${pct.toFixed(1)}% depuis début</span>`);}
+function setLoading(on){const btn=ge('syncBtn');btn.disabled=on;btn.classList.toggle('loading',on);}
+let stTimer;
+function showStatus(msg,type='ok'){const bar=ge('statusBar'),m=ge('statusMsg');bar.className=`status-bar ${type}`;m.textContent=msg;clearTimeout(stTimer);if(type==='ok')stTimer=setTimeout(()=>{bar.className='status-bar hidden';},5000);}
+
+// NAV
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const id=btn.dataset.page;
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    ge('page-'+id).classList.add('active');btn.classList.add('active');
+    ge('content').scrollTo({top:0,behavior:'smooth'});
+  });
+});
+document.querySelectorAll('.info-btn[data-n]').forEach(btn=>{
+  btn.addEventListener('click',()=>{const p=ge(btn.dataset.n);if(!p)return;p.classList.toggle('open');btn.classList.toggle('on',p.classList.contains('open'));});
+});
+ge('syncBtn').addEventListener('click',fetchCSV);
+ge('cfg-save-btn').addEventListener('click',async()=>{
+  const t=ge('cfg-token').value.trim(),r=ge('cfg-repo').value.trim(),p=ge('cfg-path').value.trim();
+  if(t)CFG.token=t;if(r)CFG.repo=r;if(p)CFG.path=p;
+  if(CFG.token)ge('nav-config').classList.add('configured');
+  document.querySelector('[data-page="apercu"]').click();
+  await fetchCSV();
+});
+
+window.addEventListener('DOMContentLoaded',()=>{
+  if(CFG.token)ge('cfg-token').value=CFG.token;
+  ge('cfg-repo').value=CFG.repo;
+  ge('cfg-path').value=CFG.path;
+  if(CFG.token){ge('nav-config').classList.add('configured');fetchCSV();}
+  else showStatus('⚙️ Saisissez votre token GitHub dans Config','err');
+});
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}
+</script>
+</body>
+</html>
