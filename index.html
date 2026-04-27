@@ -498,29 +498,44 @@ function parseCSV(text){
 }
 
 async function loadData(){
-  const token=getToken();
-  setStatus('loading','Chargement…');
+  const token = getToken();
+  setStatus('loading', 'Chargement…');
   hideErr();
+  
   try {
-    const [csvText,jsonText] = await Promise.all([
+    const [csvText, jsonText] = await Promise.all([
       fetchFile(CSV_PATH, token),
       fetchFile(JSN_PATH, token)
     ]);
-    allData = parseCSV(csvText).sort((a,b)=>a.date.localeCompare(b.date));
-    predData = JSON.parse(jsonText).sort((a,b)=>a.date.localeCompare(b.date));
-    if(!allData.length) throw new Error('Aucune ligne valide dans le CSV après parsing');
-    const last=allData[allData.length-1];
-    setStatus('ok',`OK · ${new Date().toLocaleString('fr-FR',{hour:'2-digit',minute:'2-digit'})} · ${allData.length} pts`);
-    document.getElementById('sub-overview').textContent=`Dernière donnée : ${last.date} · ${allData.length} observations · ${predData.length} prévisions`;
-    document.getElementById('no-data').style.display='none';
-    document.getElementById('main-content').style.display='';
+
+    // 1. On traite l'historique comme avant
+    allData = parseCSV(csvText).sort((a,b) => a.date.localeCompare(b.date));
+
+    // 2. On traite la nouvelle réponse de l'IA XGBoost
+    const aiResponse = JSON.parse(jsonText); 
+    
+    // On extrait la liste des prédictions qui est dans la propriété .predictions
+    predData = aiResponse.predictions.sort((a,b) => a.date.localeCompare(b.date));
+    
+    // On récupère aussi le score d'erreur pour l'afficher (optionnel)
+    window.AI_ERROR = aiResponse.error_mae;
+    window.AI_LAG = aiResponse.best_lag;
+
+    const last = allData[allData.length - 1];
+    setStatus('ok', `Précision IA : ±${(window.AI_ERROR * 100).toFixed(1)} cts`);
+    
+    document.getElementById('sub-overview').textContent = 
+      `Dernière donnée : ${last.date} · Lag optimal : ${window.AI_LAG}j · Erreur : ${window.AI_ERROR}€`;
+    
+    document.getElementById('no-data').style.display = 'none';
+    document.getElementById('main-content').style.display = '';
+    
     setPeriod(currentPeriod, false);
     renderAll();
-  } catch(e){
-    setStatus('error','Erreur');
-    showErr(e.message);
-    document.getElementById('no-data').style.display='block';
-    document.getElementById('main-content').style.display='none';
+
+  } catch(e) {
+    setStatus('error', 'Erreur de structure JSON');
+    showErr("L'IA a changé de format : " + e.message);
     console.error(e);
   }
 }
