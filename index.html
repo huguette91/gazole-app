@@ -2,257 +2,810 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0d0f14">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Gazole">
-<title>Brent & Gazole - IA</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prix Carburant — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:#0d0f14;--bg2:#13161d;--bg3:#1a1e28;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --text:#e8eaf0;--muted:#7a8299;
-  --accent:#4f8ef7;--orange:#f7894f;--green:#3dd68c;
-  --red:#f75f5f;--purple:#b07ff7;--yellow:#f7d44f;
-  --mono:'DM Mono',monospace;--sans:'Syne',sans-serif;
-  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
-}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overscroll-behavior:none;font-size:14px;}
-.app{display:flex;flex-direction:column;height:100dvh;}
-.topbar{padding:12px 18px 10px;padding-top:calc(12px + var(--safe-top));background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
-.topbar-row{display:flex;align-items:center;justify-content:space-between;}
-.app-name{font-size:18px;font-weight:800;}
-.app-name span{color:var(--accent);}
-.topbar-right{display:flex;align-items:center;gap:8px;}
-.badge{font-size:9px;font-family:var(--mono);padding:3px 8px;border-radius:20px;background:rgba(79,142,247,0.12);color:var(--accent);border:1px solid rgba(79,142,247,0.25);}
-.date-line{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:3px;}
-.sync-btn{display:flex;align-items:center;gap:5px;background:rgba(61,214,140,0.1);border:1px solid rgba(61,214,140,0.25);color:var(--green);font-family:var(--mono);font-size:9px;font-weight:500;padding:4px 10px;border-radius:20px;cursor:pointer;transition:all 0.2s;}
-.sync-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.sync-btn.loading svg{animation:spin 0.8s linear infinite;}
-.status-bar{font-size:9px;font-family:var(--mono);padding:5px 18px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
-.status-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
-.content{flex:1;overflow-y:auto;padding:14px;padding-bottom:calc(72px + var(--safe-bottom));}
-.page{display:none;}.page.active{display:block;}
-.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
-.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px;position:relative;overflow:hidden;}
-.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
-.kpi.orange::before{background:var(--orange);}.kpi.blue::before{background:var(--accent);}.kpi.green::before{background:var(--green);}.kpi.purple::before{background:var(--purple);}
-.kpi-label{font-size:9px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
-.kpi-value{font-size:20px;font-weight:800;font-family:var(--mono);line-height:1;}
-.kpi-sub{font-size:9px;color:var(--muted);font-family:var(--mono);margin-top:3px;}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
-.card-title{font-size:13px;font-weight:700;margin-bottom:2px;}
-.card-sub{font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:10px;}
-.ftable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;margin-top:10px;}
-.ftable th{text-align:left;padding:5px 4px;color:var(--muted);border-bottom:1px solid var(--border);}
-.ftable td{padding:6px 4px;border-bottom:1px solid var(--border);}
-.formula{font-family:var(--mono);font-size:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px;color:var(--orange);margin-top:10px;white-space:pre-line;}
-.bottomnav{position:fixed;bottom:0;left:0;right:0;padding-bottom:var(--safe-bottom);background:var(--bg2);border-top:1px solid var(--border);display:flex;z-index:50;}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;cursor:pointer;border:none;background:none;color:var(--muted);font-size:9px;font-weight:700;}
-.nav-btn.active{color:var(--accent);}
-.nav-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;margin-bottom:3px;}
-.cfg-input{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);padding:10px;border-radius:10px;margin-bottom:10px;}
-.cfg-save{width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:12px;font-weight:700;}
+  :root {
+    --bg: #f4f3ef;
+    --surface: #ffffff;
+    --surface2: #f9f8f5;
+    --border: #e2e0d8;
+    --text: #1a1916;
+    --text2: #6b6860;
+    --text3: #9e9b94;
+    --accent: #d4622a;
+    --accent2: #2a6dd4;
+    --accent3: #2aa87a;
+    --accent4: #9b59b6;
+    --red: #c0392b;
+    --green: #27ae60;
+    --warn: #e67e22;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Sora', sans-serif;
+    --r: 8px;
+    --r2: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); font-family: var(--sans); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  /* TOKEN MODAL */
+  #token-modal { position: fixed; inset: 0; background: rgba(26,25,22,0.55); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .modal-box { background: var(--surface); border-radius: var(--r2); padding: 32px; width: 420px; max-width: 90vw; border: 1px solid var(--border); }
+  .modal-box h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .modal-box p { color: var(--text2); font-size: 13px; margin-bottom: 20px; line-height: 1.6; }
+  .modal-box input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--r); font-family: var(--mono); font-size: 13px; background: var(--surface2); color: var(--text); outline: none; margin-bottom: 12px; }
+  .modal-box input:focus { border-color: var(--accent); }
+  .btn-primary { background: var(--accent); color: #fff; border: none; border-radius: var(--r); padding: 10px 20px; font-family: var(--sans); font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; }
+  .btn-primary:hover { background: #bf5525; }
+
+  /* LAYOUT */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-logo { width: 32px; height: 32px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .header-logo svg { width: 18px; height: 18px; fill: none; stroke: white; stroke-width: 2; }
+  .header-title { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+  .header-sub { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .last-update { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; }
+  .status-dot.loading { background: var(--warn); animation: pulse 1s infinite; }
+  .status-dot.error { background: var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .period-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 28px; display: flex; align-items: center; gap: 6px; }
+  .period-bar span { font-size: 12px; color: var(--text2); margin-right: 8px; font-weight: 500; }
+  .period-btn { font-family: var(--sans); font-size: 12px; padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px; background: transparent; cursor: pointer; color: var(--text2); transition: all .15s; }
+  .period-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .period-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  main { padding: 24px 28px; max-width: 1600px; margin: 0 auto; }
+
+  /* KPI CARDS */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px 18px; }
+  .kpi-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 600; font-family: var(--mono); letter-spacing: -0.02em; color: var(--text); }
+  .kpi-value.up { color: var(--red); }
+  .kpi-value.down { color: var(--green); }
+  .kpi-delta { font-size: 12px; font-family: var(--mono); margin-top: 4px; }
+  .kpi-delta.up { color: var(--red); }
+  .kpi-delta.down { color: var(--green); }
+  .kpi-delta.neutral { color: var(--text3); }
+  .kpi-accent { width: 3px; height: 100%; position: absolute; left: 0; top: 0; border-radius: var(--r2) 0 0 var(--r2); }
+  .kpi-card { position: relative; overflow: hidden; }
+
+  /* CHARTS GRID */
+  .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .charts-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 18px; }
+  .chart-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .chart-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .chart-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .chart-badge { font-size: 11px; font-family: var(--mono); padding: 3px 8px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); color: var(--text2); }
+  .chart-wrap { position: relative; }
+
+  /* PREDICTION ZONE */
+  .pred-legend { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+  .pred-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); }
+  .pred-dot { width: 10px; height: 3px; border-radius: 2px; }
+
+  /* INDICATOR TABLE */
+  .indicator-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .indicator-table th { text-align: left; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); padding: 0 0 10px 0; border-bottom: 1px solid var(--border); }
+  .indicator-table td { padding: 10px 0; border-bottom: 1px solid var(--border); color: var(--text); }
+  .indicator-table tr:last-child td { border-bottom: none; }
+  .ind-value { font-family: var(--mono); font-weight: 500; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-family: var(--mono); font-weight: 500; }
+  .badge.bull { background: #e8f8f0; color: #27ae60; }
+  .badge.bear { background: #fdf0ef; color: #c0392b; }
+  .badge.neutral { background: var(--surface2); color: var(--text2); }
+  .badge.overbought { background: #fdf0ef; color: #c0392b; }
+  .badge.oversold { background: #e8f8f0; color: #27ae60; }
+
+  /* SPREAD */
+  .spread-bar-wrap { margin-top: 8px; }
+  .spread-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+  .spread-bar-bg { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .spread-bar-fill { height: 100%; border-radius: 3px; transition: width .5s; }
+  .spread-label { width: 90px; color: var(--text2); }
+  .spread-val { width: 60px; text-align: right; font-family: var(--mono); font-size: 12px; }
+
+  /* FOOTER */
+  footer { text-align: center; padding: 24px; color: var(--text3); font-size: 12px; font-family: var(--mono); border-top: 1px solid var(--border); margin-top: 8px; }
+
+  /* ERROR */
+  .error-msg { background: #fdf0ef; border: 1px solid #f5c6c2; border-radius: var(--r); padding: 12px 16px; color: var(--red); font-size: 13px; margin: 12px 0; }
+
+  @media (max-width: 900px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    .charts-row { grid-template-columns: 1fr; }
+    .charts-row3 { grid-template-columns: 1fr; }
+    main { padding: 16px; }
+  }
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="topbar">
-    <div class="topbar-row">
-      <div class="app-name">Brent<span> & </span>Gazole</div>
-      <div class="topbar-right">
-        <div class="badge" id="badge-lag">IA XGBOOST</div>
-        <button class="sync-btn" id="syncBtn">
-          <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          Sync
-        </button>
-      </div>
-    </div>
-    <div class="date-line" id="dateRange">Chargement...</div>
+
+<!-- TOKEN MODAL -->
+<div id="token-modal">
+  <div class="modal-box">
+    <h2>🔑 Token GitHub</h2>
+    <p>Ce dashboard charge les données en direct depuis le dépôt <strong>huguette91/prix-gasoil</strong>. Entrez votre token GitHub pour continuer.</p>
+    <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+    <button class="btn-primary" onclick="initDashboard()">Charger les données</button>
   </div>
-  <div class="status-bar" id="statusBar" style="display:none;"><div class="status-dot"></div><span id="statusMsg"></span></div>
-
-  <div class="content" id="content">
-    <div class="page active" id="page-apercu">
-      <div class="kpi-grid">
-        <div class="kpi orange"><div class="kpi-label">Gazole</div><div class="kpi-value" id="kpi-gazole">—</div><div class="kpi-sub" id="kpi-gazole-sub">—</div></div>
-        <div class="kpi blue"><div class="kpi-label">Brent EUR</div><div class="kpi-value" id="kpi-brent">—</div><div class="kpi-sub" id="kpi-brent-sub">—</div></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Prix à la pompe et Brent</div>
-        <div style="height:220px"><canvas id="cApercu"></canvas></div>
-      </div>
-    </div>
-
-    <div class="page" id="page-prevision">
-      <div class="card">
-        <div class="card-title">Prévision IA XGBoost (10 jours)</div>
-        <div class="card-sub" id="sub-forecast">Basé sur le comportement "Plume et Fusée"</div>
-        <div style="height:210px"><canvas id="cForecast"></canvas></div>
-        <div style="overflow-x:auto">
-          <table class="ftable">
-            <thead><tr><th>Date</th><th>Statut</th><th>Prévu</th><th>Tendance</th></tr></thead>
-            <tbody id="ftbody"></tbody>
-          </table>
-        </div>
-        <div class="formula" id="formula-text">En attente des données de l'IA...</div>
-      </div>
-    </div>
-
-    <div class="page" id="page-config">
-      <div class="card">
-        <div class="card-title">⚙️ Configuration GitHub</div>
-        <input class="cfg-input" type="password" id="cfg-token" placeholder="Token GitHub">
-        <input class="cfg-input" type="text" id="cfg-repo" placeholder="huguette91/prix-gasoil">
-        <input class="cfg-input" type="text" id="cfg-path" placeholder="data/historique.csv">
-        <button class="cfg-save" id="cfg-save-btn">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-
-  <nav class="bottomnav">
-    <button class="nav-btn active" data-page="apercu"><svg viewBox="0 0 24 24"><rect x="3" y="13" width="4" height="8"/><rect x="10" y="9" width="4" height="12"/><rect x="17" y="5" width="4" height="16"/></svg>Aperçu</button>
-    <button class="nav-btn" data-page="prevision"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12,7 12,12 15,15"/></svg>IA</button>
-    <button class="nav-btn" data-page="config"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Config</button>
-  </nav>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    <div>
+      <div class="header-title">Observatoire Carburant</div>
+      <div class="header-sub">huguette91/prix-gasoil · live</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="last-update"><span class="status-dot loading" id="status-dot"></span><span id="status-text">Chargement…</span></span>
+  </div>
+</div>
+
+<!-- PERIOD BAR -->
+<div class="period-bar">
+  <span>Période :</span>
+  <button class="period-btn" data-p="30" onclick="setPeriod(30)">1M</button>
+  <button class="period-btn" data-p="90" onclick="setPeriod(90)">3M</button>
+  <button class="period-btn" data-p="180" onclick="setPeriod(180)">6M</button>
+  <button class="period-btn" data-p="365" onclick="setPeriod(365)">1A</button>
+  <button class="period-btn active" data-p="0" onclick="setPeriod(0)">Tout</button>
+</div>
+
+<main>
+  <div id="error-zone"></div>
+
+  <!-- KPI -->
+  <div class="kpi-row" id="kpi-row">
+    <div class="kpi-card"><div class="kpi-label">Gazole (dernier)</div><div class="kpi-value" id="k-gazole">—</div><div class="kpi-delta neutral" id="k-gazole-d">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">Brent USD</div><div class="kpi-value" id="k-brent-usd">—</div><div class="kpi-delta neutral" id="k-brent-usd-d">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">Brent EUR</div><div class="kpi-value" id="k-brent-eur">—</div><div class="kpi-delta neutral" id="k-brent-eur-d">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">Taux EUR/USD</div><div class="kpi-value" id="k-eurusd">—</div><div class="kpi-delta neutral" id="k-eurusd-d">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">Spread raffinage</div><div class="kpi-value" id="k-spread">—</div><div class="kpi-delta neutral" id="k-spread-d">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">Prédiction J+1</div><div class="kpi-value" id="k-pred">—</div><div class="kpi-delta neutral" id="k-pred-d">—</div></div>
+  </div>
+
+  <!-- MAIN CHART + SPREAD -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Prix historique + prédictions</div><div class="chart-sub">Gazole (€/L) · Brent (€/L converti) · Prévisions J+10</div></div>
+        <span class="chart-badge" id="badge-period">Tout</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-main" height="300"></canvas></div>
+      <div class="pred-legend">
+        <div class="pred-legend-item"><div class="pred-dot" style="background:#d4622a"></div>Gazole</div>
+        <div class="pred-legend-item"><div class="pred-dot" style="background:#2a6dd4"></div>Brent (€/L)</div>
+        <div class="pred-legend-item"><div class="pred-dot" style="background:#d4622a;opacity:.4;border: 1px dashed #d4622a;"></div>Prédiction</div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Spread raffinage</div><div class="chart-sub">Gazole − Brent converti (€/L)</div></div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-spread" height="160"></canvas></div>
+      <div class="spread-bar-wrap" id="spread-decomp"></div>
+    </div>
+  </div>
+
+  <!-- BOLLINGER + MA -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Bandes de Bollinger</div><div class="chart-sub">Gazole · fenêtre 20j · σ×2</div></div>
+        <span class="chart-badge" id="bb-badge">—</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-bollinger" height="220"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Moyennes mobiles</div><div class="chart-sub">MA7 · MA30 · MA90</div></div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-ma" height="220"></canvas></div>
+    </div>
+  </div>
+
+  <!-- RSI + MACD -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">RSI (14j)</div><div class="chart-sub">Relative Strength Index · zones 30/70</div></div>
+        <span class="chart-badge" id="rsi-badge">—</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-rsi" height="180"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">MACD (12/26/9)</div><div class="chart-sub">Signal · Histogramme</div></div>
+        <span class="chart-badge" id="macd-badge">—</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-macd" height="180"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CORR + VOL + INDICATORS -->
+  <div class="charts-row3">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Corrélation glissante 30j</div><div class="chart-sub">Brent EUR vs Gazole</div></div>
+        <span class="chart-badge" id="corr-badge">—</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-corr" height="180"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Volatilité historique</div><div class="chart-sub">σ annualisée · fenêtre 30j</div></div>
+        <span class="chart-badge" id="vol-badge">—</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-vol" height="180"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Tableau de bord technique</div><div class="chart-sub">Résumé des indicateurs</div></div>
+      </div>
+      <table class="indicator-table" id="ind-table">
+        <thead><tr><th>Indicateur</th><th>Valeur</th><th>Signal</th></tr></thead>
+        <tbody id="ind-tbody"><tr><td colspan="3" style="color:var(--text3);padding:20px 0">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<footer>Données · huguette91/prix-gasoil · Mise à jour quotidienne automatique · Calculs techniques côté client</footer>
+
 <script>
-const CFG={
-  get token(){return localStorage.getItem('gh_token')||'';},
-  get repo(){return localStorage.getItem('gh_repo')||'huguette91/prix-gasoil';},
-  get path(){return localStorage.getItem('gh_path')||'data/historique.csv';},
-  set token(v){localStorage.setItem('gh_token',v);},
-  set repo(v){localStorage.setItem('gh_repo',v);},
-  set path(v){localStorage.setItem('gh_path',v);}
-};
+const OWNER = 'huguette91';
+const REPO = 'prix-gasoil';
+const HIST_PATH = 'data/historique.csv';
+const PRED_PATH = 'data/previsions.json';
 
-let DATA=[], CHARTS={}, OPT_LAG=16;
+let allData = [], predData = [], filteredData = [], currentPeriod = 0;
+let charts = {};
 
-const DEF={
-  responsive:true,maintainAspectRatio:false,
-  plugins:{legend:{display:false}},
-  scales:{x:{ticks:{font:{size:9},color:'#7a8299'}},y:{ticks:{font:{size:9},color:'#7a8299'}}}
-};
-
-async function fetchCSV(){
-  if(!CFG.token){showStatus('Token manquant','err');return;}
-  setLoading(true);
-  showStatus('Synchro GitHub…','loading');
-  try{
-    const headers={Authorization:`token ${CFG.token}`,Accept:'application/vnd.github.v3.raw'};
-    
-    // 1. Historique
-    const resCSV=await fetch(`https://api.github.com/repos/${CFG.repo}/contents/${CFG.path}`,{headers});
-    const text=await resCSV.text();
-    parseCSV(text);
-
-    // 2. Prévisions IA
-    const resJSON=await fetch(`https://api.github.com/repos/${CFG.repo}/contents/data/previsions.json`,{headers});
-    if(resJSON.ok) window.AI_FORECASTS = await resJSON.json();
-    else window.AI_FORECASTS = [];
-
-    showStatus(`✓ Données IA à jour`,'ok');
-    rebuildAll();
-  }catch(e){showStatus(`Erreur : ${e.message}`,'err');}
-  finally{setLoading(false);}
+// ─── FETCH ───────────────────────────────────────────────────────────────────
+async function fetchGithubFile(path, token) {
+  const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`;
+  const r = await fetch(url, { headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3.raw' } });
+  if (!r.ok) throw new Error(`GitHub API ${r.status}: ${r.statusText}`);
+  return r.text();
 }
 
-function parseCSV(text){
-  const lines=text.trim().split('\n').filter(l=>l&&!l.startsWith('sep='));
-  const h=lines[0].split(';');
-  DATA=lines.slice(1).map(l=>{
-    const c=l.split(';');
-    return{date:c[0],g:parseFloat(c[1]),beur:parseFloat(c[3])};
-  }).filter(r=>!isNaN(r.g));
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const header = lines[0].split(';').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const vals = line.split(';');
+    const obj = {};
+    header.forEach((h, i) => {
+      obj[h] = isNaN(vals[i]) ? vals[i]?.trim() : parseFloat(vals[i]);
+    });
+    return obj;
+  }).filter(r => r.date && !isNaN(r.prix_gazole));
 }
 
-function rebuildAll(){
-  if(!DATA.length)return;
-  const last=DATA[DATA.length-1];
-  document.getElementById('dateRange').textContent=`Dernier relevé : ${fmtDate(last.date)}`;
+async function initDashboard() {
+  const token = document.getElementById('token-input').value.trim();
+  if (!token) return;
+  document.getElementById('token-modal').style.display = 'none';
+  setStatus('loading', 'Chargement des données…');
 
-  // Aperçu KPIs
-  T('kpi-gazole',`${last.g.toFixed(3)}€`);
-  T('kpi-brent',`${last.beur.toFixed(2)}€`);
+  try {
+    const [csvText, jsonText] = await Promise.all([
+      fetchGithubFile(HIST_PATH, token),
+      fetchGithubFile(PRED_PATH, token)
+    ]);
 
-  // Graphique Aperçu
-  const labels=DATA.slice(-30).map(d=>shortDate(d.date));
-  DC('cApercu');
-  CHARTS.cApercu=new Chart(ge('cApercu'),{
-    type:'line',
-    data:{
+    allData = parseCSV(csvText).sort((a, b) => a.date.localeCompare(b.date));
+    predData = JSON.parse(jsonText).sort((a, b) => a.date.localeCompare(b.date));
+
+    if (!allData.length) throw new Error('Aucune donnée dans le CSV');
+
+    setStatus('ok', `Mis à jour · ${new Date().toLocaleString('fr-FR')}`);
+    setPeriod(0);
+  } catch (e) {
+    setStatus('error', 'Erreur de chargement');
+    showError(e.message);
+  }
+}
+
+// ─── PERIOD ──────────────────────────────────────────────────────────────────
+function setPeriod(days) {
+  currentPeriod = days;
+  document.querySelectorAll('.period-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.p) === days);
+  });
+  const labels = { 0: 'Tout', 30: '1 mois', 90: '3 mois', 180: '6 mois', 365: '1 an' };
+  document.getElementById('badge-period').textContent = labels[days] || 'Tout';
+
+  if (!allData.length) return;
+  if (days === 0) {
+    filteredData = [...allData];
+  } else {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    filteredData = allData.filter(d => d.date >= cutoffStr);
+  }
+  renderAll();
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function renderAll() {
+  updateKPIs();
+  renderMainChart();
+  renderBollinger();
+  renderMA();
+  renderRSI();
+  renderMACD();
+  renderSpread();
+  renderCorr();
+  renderVol();
+  renderIndicatorTable();
+}
+
+// ─── KPIs ────────────────────────────────────────────────────────────────────
+function updateKPIs() {
+  const last = filteredData[filteredData.length - 1];
+  const prev = filteredData[filteredData.length - 2];
+
+  function setKPI(id, val, prev_val, fmt, unit = '') {
+    const el = document.getElementById(id);
+    const del = document.getElementById(id + '-d');
+    el.textContent = val !== undefined ? fmt(val) + unit : '—';
+    if (prev_val !== undefined && val !== undefined) {
+      const diff = val - prev_val;
+      const pct = (diff / prev_val * 100).toFixed(2);
+      const sign = diff >= 0 ? '+' : '';
+      del.textContent = `${sign}${fmt(diff)}${unit} (${sign}${pct}%)`;
+      del.className = 'kpi-delta ' + (diff > 0.0001 ? 'up' : diff < -0.0001 ? 'down' : 'neutral');
+      document.getElementById(id).className = 'kpi-value ' + (diff > 0.0001 ? 'up' : diff < -0.0001 ? 'down' : '');
+    } else { del.textContent = '—'; del.className = 'kpi-delta neutral'; }
+  }
+
+  const f2 = v => v.toFixed(2);
+  const f3 = v => v.toFixed(3);
+  const f4 = v => v.toFixed(4);
+
+  setKPI('k-gazole', last?.prix_gazole, prev?.prix_gazole, f3, ' €/L');
+  setKPI('k-brent-usd', last?.brent_usd, prev?.brent_usd, f2, ' $');
+  setKPI('k-brent-eur', last?.brent_eur, prev?.brent_eur, f2, ' €');
+
+  if (last?.brent_usd && last?.brent_eur) {
+    const eurusd = last.brent_usd / last.brent_eur;
+    const eurusd_p = prev ? prev.brent_usd / prev.brent_eur : undefined;
+    setKPI('k-eurusd', eurusd, eurusd_p, f4, '');
+  }
+
+  // Spread: brent en €/L (1 baril = 159L)
+  if (last?.brent_eur && last?.prix_gazole) {
+    const brent_per_l = last.brent_eur / 159;
+    const spread = last.prix_gazole - brent_per_l;
+    const spread_p = prev ? prev.prix_gazole - (prev.brent_eur / 159) : undefined;
+    setKPI('k-spread', spread, spread_p, f3, ' €/L');
+  }
+
+  if (predData.length) {
+    const nextPred = predData.find(p => p.date > (last?.date || ''));
+    if (nextPred) {
+      const pdiff = last ? nextPred.prix - last.prix_gazole : undefined;
+      document.getElementById('k-pred').textContent = nextPred.prix.toFixed(3) + ' €/L';
+      if (pdiff !== undefined) {
+        const sign = pdiff >= 0 ? '+' : '';
+        const el = document.getElementById('k-pred-d');
+        el.textContent = `${sign}${pdiff.toFixed(3)} vs auj.`;
+        el.className = 'kpi-delta ' + (pdiff > 0 ? 'up' : pdiff < 0 ? 'down' : 'neutral');
+      }
+    }
+  }
+}
+
+// ─── MAIN CHART ──────────────────────────────────────────────────────────────
+function renderMainChart() {
+  const labels = filteredData.map(d => d.date);
+  const gazole = filteredData.map(d => d.prix_gazole);
+  const brent_l = filteredData.map(d => d.brent_eur / 159);
+
+  // Prediction extension
+  const lastHistDate = filteredData[filteredData.length - 1]?.date || '';
+  const futurePred = predData.filter(p => p.date > lastHistDate);
+  const predLabels = futurePred.map(p => p.date);
+  const predValues = futurePred.map(p => p.prix);
+
+  // Bridge: last historical + pred
+  const bridgeLabel = lastHistDate;
+  const bridgeValue = filteredData[filteredData.length - 1]?.prix_gazole;
+
+  const allLabels = [...labels, ...predLabels];
+  // Pad historical datasets
+  const gazoleFull = [...gazole, ...new Array(predLabels.length).fill(null)];
+  const brentFull = [...brent_l, ...new Array(predLabels.length).fill(null)];
+  const predFull = [...new Array(labels.length - 1).fill(null), bridgeValue, ...predValues];
+
+  destroyChart('chart-main');
+  charts['chart-main'] = new Chart(document.getElementById('chart-main'), {
+    type: 'line',
+    data: {
+      labels: allLabels,
+      datasets: [
+        { label: 'Gazole', data: gazoleFull, borderColor: '#d4622a', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: false },
+        { label: 'Brent (€/L)', data: brentFull, borderColor: '#2a6dd4', borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: false, borderDash: [] },
+        { label: 'Prédiction', data: predFull, borderColor: '#d4622a', borderWidth: 2, pointRadius: 0, tension: 0.3, fill: false, borderDash: [5, 4], backgroundColor: 'rgba(212,98,42,0.08)' }
+      ]
+    },
+    options: chartOpts({ yLabel: '€/L', thinX: true })
+  });
+}
+
+// ─── BOLLINGER ───────────────────────────────────────────────────────────────
+function renderBollinger() {
+  const N = 20;
+  const data = filteredData;
+  const prices = data.map(d => d.prix_gazole);
+  const upper = [], lower = [], mid = [];
+  for (let i = 0; i < prices.length; i++) {
+    if (i < N - 1) { upper.push(null); lower.push(null); mid.push(null); continue; }
+    const window = prices.slice(i - N + 1, i + 1);
+    const mean = window.reduce((a, b) => a + b, 0) / N;
+    const std = Math.sqrt(window.reduce((a, b) => a + (b - mean) ** 2, 0) / N);
+    upper.push(mean + 2 * std);
+    lower.push(mean - 2 * std);
+    mid.push(mean);
+  }
+
+  const last_price = prices[prices.length - 1];
+  const last_upper = upper[upper.length - 1];
+  const last_lower = lower[lower.length - 1];
+  let sig = 'Neutre', sigClass = 'neutral';
+  if (last_upper && last_price > last_upper) { sig = 'Surachat'; sigClass = 'bear'; }
+  else if (last_lower && last_price < last_lower) { sig = 'Survente'; sigClass = 'bull'; }
+  document.getElementById('bb-badge').textContent = sig;
+  document.getElementById('bb-badge').className = `chart-badge ${sigClass}`;
+
+  const labels = data.map(d => d.date);
+  destroyChart('chart-bollinger');
+  charts['chart-bollinger'] = new Chart(document.getElementById('chart-bollinger'), {
+    type: 'line',
+    data: {
       labels,
-      datasets:[
-        {label:'Brent €',data:DATA.slice(-30).map(d=>d.beur),borderColor:'#4f8ef7',yAxisID:'y',pointRadius:0},
-        {label:'Gazole',data:DATA.slice(-30).map(d=>d.g),borderColor:'#f7894f',yAxisID:'y1',pointRadius:0}
+      datasets: [
+        { label: 'Haut', data: upper, borderColor: 'rgba(212,98,42,0.5)', borderWidth: 1, pointRadius: 0, fill: '+1', backgroundColor: 'rgba(212,98,42,0.07)', tension: 0.3 },
+        { label: 'Bas', data: lower, borderColor: 'rgba(212,98,42,0.5)', borderWidth: 1, pointRadius: 0, fill: false, tension: 0.3 },
+        { label: 'MA20', data: mid, borderColor: '#2a6dd4', borderWidth: 1.5, pointRadius: 0, borderDash: [4, 3], fill: false, tension: 0.3 },
+        { label: 'Gazole', data: prices, borderColor: '#d4622a', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.3 }
       ]
     },
-    options:{...DEF,scales:{x:DEF.scales.x,y:{position:'left'},y1:{position:'right',grid:{display:false}}}}
-  });
-
-  // PREVISIONS IA
-  const FC = window.AI_FORECASTS || [];
-  T('sub-forecast', `Prévisions XGBoost · à partir du ${fmtDate(last.date)}`);
-  T('formula-text', `Modèle : XGBoost (Asymétrique)\nStatus : Prédit sur ${FC.length} jours`);
-
-  const tb=ge('ftbody'); tb.innerHTML='';
-  FC.forEach((f,i)=>{
-    const prev=i===0?last.g:FC[i-1].prix;
-    const diff=f.prix-prev;
-    const arr=diff>0.001?'<span style="color:var(--red)">▲</span>':diff<-0.001?'<span style="color:var(--green)">▼</span>':'<span style="color:var(--muted)">→</span>';
-    tb.innerHTML+=`<tr><td>${f.date.split('-').slice(1).reverse().join('/')}</td><td>Stable</td><td style="font-weight:700">${f.prix.toFixed(3)}€</td><td>${arr}</td></tr>`;
-  });
-
-  // Graphique Prévision
-  const last8=DATA.slice(-8);
-  const fLabels=[...last8.map(d=>shortDate(d.date)),...FC.map(f=>f.date.split('-')[2])];
-  const hLine=[...last8.map(d=>d.g),...Array(FC.length).fill(null)];
-  const pLine=[...Array(last8.length-1).fill(null),last.g,...FC.map(f=>f.prix)];
-
-  DC('cForecast');
-  CHARTS.cForecast=new Chart(ge('cForecast'),{
-    type:'line',
-    data:{
-      labels:fLabels,
-      datasets:[
-        {label:'Historique',data:hLine,borderColor:'#f7894f',pointRadius:0,borderWidth:2},
-        {label:'Prévision IA',data:pLine,borderColor:'#3dd68c',backgroundColor:'rgba(61,214,140,0.1)',fill:true,pointRadius:3}
-      ]
-    },
-    options:DEF
+    options: chartOpts({ yLabel: '€/L', thinX: true })
   });
 }
 
-function ge(id){return document.getElementById(id);}
-function T(id,txt){if(ge(id))ge(id).textContent=txt;}
-function DC(id){if(CHARTS[id])CHARTS[id].destroy();}
-function fmtDate(d){return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});}
-function shortDate(d){return d.split('-').slice(1).reverse().join('/');}
-function showStatus(msg,type){const b=ge('statusBar');b.style.display='flex';ge('statusMsg').textContent=msg;if(type==='ok')setTimeout(()=>b.style.display='none',3000);}
-function setLoading(on){ge('syncBtn').classList.toggle('loading',on);}
+// ─── MA ──────────────────────────────────────────────────────────────────────
+function renderMA() {
+  const data = filteredData;
+  const prices = data.map(d => d.prix_gazole);
+  const labels = data.map(d => d.date);
+  const ma = (n) => prices.map((_, i) => i < n - 1 ? null : prices.slice(i - n + 1, i + 1).reduce((a, b) => a + b, 0) / n);
 
-// NAV & INIT
-document.querySelectorAll('.nav-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-    ge('page-'+btn.dataset.page).classList.add('active');btn.classList.add('active');
+  destroyChart('chart-ma');
+  charts['chart-ma'] = new Chart(document.getElementById('chart-ma'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Gazole', data: prices, borderColor: '#d4622a', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.3 },
+        { label: 'MA7', data: ma(7), borderColor: '#9b59b6', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.3 },
+        { label: 'MA30', data: ma(30), borderColor: '#2aa87a', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.3 },
+        { label: 'MA90', data: ma(90), borderColor: '#2a6dd4', borderWidth: 1.5, pointRadius: 0, borderDash: [4, 3], fill: false, tension: 0.3 }
+      ]
+    },
+    options: chartOpts({ yLabel: '€/L', thinX: true })
   });
-});
-ge('cfg-save-btn').addEventListener('click',()=>{
-  CFG.token=ge('cfg-token').value; CFG.repo=ge('cfg-repo').value; CFG.path=ge('cfg-path').value;
-  fetchCSV();
-});
-window.addEventListener('DOMContentLoaded',()=>{
-  ge('cfg-token').value=CFG.token; ge('cfg-repo').value=CFG.repo; ge('cfg-path').value=CFG.path;
-  if(CFG.token)fetchCSV();
-});
+}
+
+// ─── RSI ─────────────────────────────────────────────────────────────────────
+function computeRSI(prices, period = 14) {
+  const rsi = new Array(prices.length).fill(null);
+  for (let i = period; i < prices.length; i++) {
+    const slice = prices.slice(i - period, i);
+    let gains = 0, losses = 0;
+    for (let j = 1; j < slice.length; j++) {
+      const diff = slice[j] - slice[j - 1];
+      if (diff > 0) gains += diff; else losses -= diff;
+    }
+    const rs = gains / (losses || 0.0001);
+    rsi[i] = 100 - 100 / (1 + rs);
+  }
+  return rsi;
+}
+
+function renderRSI() {
+  const prices = filteredData.map(d => d.prix_gazole);
+  const labels = filteredData.map(d => d.date);
+  const rsi = computeRSI(prices);
+  const lastRSI = rsi.filter(v => v !== null).slice(-1)[0];
+  let sig = '—', sigClass = 'neutral';
+  if (lastRSI !== undefined) {
+    sig = lastRSI.toFixed(1);
+    if (lastRSI > 70) sigClass = 'overbought';
+    else if (lastRSI < 30) sigClass = 'oversold';
+  }
+  document.getElementById('rsi-badge').textContent = sig;
+  document.getElementById('rsi-badge').className = `chart-badge ${sigClass}`;
+
+  destroyChart('chart-rsi');
+  charts['chart-rsi'] = new Chart(document.getElementById('chart-rsi'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{ label: 'RSI', data: rsi, borderColor: '#9b59b6', borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: 'rgba(155,89,182,0.08)', tension: 0.3 }]
+    },
+    options: {
+      ...chartOpts({ yLabel: 'RSI', thinX: true }),
+      scales: {
+        x: { ticks: { maxTicksLimit: 6, font: { family: "'DM Mono', monospace", size: 10 }, color: '#9e9b94' }, grid: { color: '#e2e0d8' } },
+        y: { min: 0, max: 100, ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#9e9b94' }, grid: { color: '#e2e0d8' } }
+      },
+      plugins: {
+        legend: { display: false },
+        annotation: {
+          annotations: {
+            ob: { type: 'line', yMin: 70, yMax: 70, borderColor: 'rgba(192,57,43,0.5)', borderWidth: 1, borderDash: [4, 3] },
+            os: { type: 'line', yMin: 30, yMax: 30, borderColor: 'rgba(39,174,96,0.5)', borderWidth: 1, borderDash: [4, 3] }
+          }
+        },
+        tooltip: { mode: 'index', intersect: false }
+      }
+    }
+  });
+}
+
+// ─── MACD ────────────────────────────────────────────────────────────────────
+function ema(data, period) {
+  const k = 2 / (period + 1);
+  const result = new Array(data.length).fill(null);
+  let prev = null;
+  for (let i = 0; i < data.length; i++) {
+    if (data[i] === null) continue;
+    if (prev === null) { prev = data[i]; result[i] = data[i]; continue; }
+    prev = data[i] * k + prev * (1 - k);
+    result[i] = prev;
+  }
+  return result;
+}
+
+function renderMACD() {
+  const prices = filteredData.map(d => d.prix_gazole);
+  const labels = filteredData.map(d => d.date);
+  const ema12 = ema(prices, 12);
+  const ema26 = ema(prices, 26);
+  const macd = ema12.map((v, i) => v !== null && ema26[i] !== null ? v - ema26[i] : null);
+  const signal = ema(macd, 9);
+  const histo = macd.map((v, i) => v !== null && signal[i] !== null ? v - signal[i] : null);
+
+  const lastMACD = macd.filter(v => v !== null).slice(-1)[0];
+  const lastSig = signal.filter(v => v !== null).slice(-1)[0];
+  let sigLabel = '—', sigClass = 'neutral';
+  if (lastMACD !== undefined && lastSig !== undefined) {
+    sigLabel = lastMACD > lastSig ? 'Haussier' : 'Baissier';
+    sigClass = lastMACD > lastSig ? 'bull' : 'bear';
+  }
+  document.getElementById('macd-badge').textContent = sigLabel;
+  document.getElementById('macd-badge').className = `chart-badge ${sigClass}`;
+
+  destroyChart('chart-macd');
+  charts['chart-macd'] = new Chart(document.getElementById('chart-macd'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { type: 'bar', label: 'Histogramme', data: histo, backgroundColor: histo.map(v => v >= 0 ? 'rgba(39,174,96,0.5)' : 'rgba(192,57,43,0.5)'), borderWidth: 0 },
+        { type: 'line', label: 'MACD', data: macd, borderColor: '#2a6dd4', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.3 },
+        { type: 'line', label: 'Signal', data: signal, borderColor: '#d4622a', borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.3, borderDash: [3, 3] }
+      ]
+    },
+    options: chartOpts({ thinX: true })
+  });
+}
+
+// ─── SPREAD ──────────────────────────────────────────────────────────────────
+function renderSpread() {
+  const data = filteredData;
+  const labels = data.map(d => d.date);
+  const spreadData = data.map(d => d.prix_gazole && d.brent_eur ? d.prix_gazole - d.brent_eur / 159 : null);
+
+  destroyChart('chart-spread');
+  charts['chart-spread'] = new Chart(document.getElementById('chart-spread'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{ label: 'Spread', data: spreadData, borderColor: '#2aa87a', borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: 'rgba(42,168,122,0.1)', tension: 0.3 }]
+    },
+    options: chartOpts({ yLabel: '€/L', thinX: true })
+  });
+
+  // Decomp bar
+  const last = data[data.length - 1];
+  if (!last) return;
+  const brent_l = last.brent_eur / 159;
+  const total = last.prix_gazole;
+  const zone = document.getElementById('spread-decomp');
+  zone.innerHTML = `
+    <div class="spread-row"><span class="spread-label">Brent (€/L)</span><div class="spread-bar-bg"><div class="spread-bar-fill" style="width:${(brent_l/total*100).toFixed(1)}%;background:#2a6dd4"></div></div><span class="spread-val">${brent_l.toFixed(3)} €/L</span></div>
+    <div class="spread-row"><span class="spread-label">Spread</span><div class="spread-bar-bg"><div class="spread-bar-fill" style="width:${((total-brent_l)/total*100).toFixed(1)}%;background:#d4622a"></div></div><span class="spread-val">${(total-brent_l).toFixed(3)} €/L</span></div>
+  `;
+}
+
+// ─── CORRELATION ─────────────────────────────────────────────────────────────
+function pearson(a, b) {
+  const n = a.length;
+  const ma = a.reduce((s, v) => s + v, 0) / n;
+  const mb = b.reduce((s, v) => s + v, 0) / n;
+  const num = a.reduce((s, v, i) => s + (v - ma) * (b[i] - mb), 0);
+  const da = Math.sqrt(a.reduce((s, v) => s + (v - ma) ** 2, 0));
+  const db = Math.sqrt(b.reduce((s, v) => s + (v - mb) ** 2, 0));
+  return (da && db) ? num / (da * db) : 0;
+}
+
+function renderCorr() {
+  const N = 30;
+  const data = filteredData.filter(d => d.brent_eur && d.prix_gazole);
+  const labels = data.map(d => d.date);
+  const corr = data.map((_, i) => {
+    if (i < N - 1) return null;
+    const win = data.slice(i - N + 1, i + 1);
+    return pearson(win.map(w => w.brent_eur), win.map(w => w.prix_gazole));
+  });
+  const lastCorr = corr.filter(v => v !== null).slice(-1)[0];
+  document.getElementById('corr-badge').textContent = lastCorr !== undefined ? lastCorr.toFixed(3) : '—';
+
+  destroyChart('chart-corr');
+  charts['chart-corr'] = new Chart(document.getElementById('chart-corr'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{ label: 'Corrélation', data: corr, borderColor: '#2aa87a', borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: 'rgba(42,168,122,0.08)', tension: 0.3 }]
+    },
+    options: {
+      ...chartOpts({ thinX: true }),
+      scales: {
+        x: { ticks: { maxTicksLimit: 6, font: { family: "'DM Mono', monospace", size: 10 }, color: '#9e9b94' }, grid: { color: '#e2e0d8' } },
+        y: { min: -1, max: 1, ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#9e9b94' }, grid: { color: '#e2e0d8' } }
+      }
+    }
+  });
+}
+
+// ─── VOLATILITY ──────────────────────────────────────────────────────────────
+function renderVol() {
+  const N = 30;
+  const data = filteredData;
+  const prices = data.map(d => d.prix_gazole);
+  const labels = data.map(d => d.date);
+  const returns = prices.map((p, i) => i === 0 ? null : Math.log(p / prices[i - 1]));
+  const vol = returns.map((_, i) => {
+    if (i < N) return null;
+    const win = returns.slice(i - N + 1, i + 1).filter(v => v !== null);
+    const mean = win.reduce((a, b) => a + b, 0) / win.length;
+    const std = Math.sqrt(win.reduce((a, b) => a + (b - mean) ** 2, 0) / win.length);
+    return std * Math.sqrt(252) * 100;
+  });
+  const lastVol = vol.filter(v => v !== null).slice(-1)[0];
+  document.getElementById('vol-badge').textContent = lastVol !== undefined ? lastVol.toFixed(1) + ' %' : '—';
+
+  destroyChart('chart-vol');
+  charts['chart-vol'] = new Chart(document.getElementById('chart-vol'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{ label: 'Volatilité %', data: vol, borderColor: '#e67e22', borderWidth: 2, pointRadius: 0, fill: true, backgroundColor: 'rgba(230,126,34,0.08)', tension: 0.3 }]
+    },
+    options: chartOpts({ yLabel: '%', thinX: true })
+  });
+}
+
+// ─── INDICATOR TABLE ─────────────────────────────────────────────────────────
+function renderIndicatorTable() {
+  const prices = filteredData.map(d => d.prix_gazole);
+  const last = filteredData[filteredData.length - 1];
+
+  const rsi_arr = computeRSI(prices);
+  const rsiVal = rsi_arr.filter(v => v !== null).slice(-1)[0];
+
+  const ema12 = ema(prices, 12);
+  const ema26 = ema(prices, 26);
+  const macdArr = ema12.map((v, i) => v !== null && ema26[i] !== null ? v - ema26[i] : null);
+  const signalArr = ema(macdArr, 9);
+  const lastMACD = macdArr.filter(v => v !== null).slice(-1)[0];
+  const lastSignal = signalArr.filter(v => v !== null).slice(-1)[0];
+
+  const eurusd = last?.brent_usd && last?.brent_eur ? last.brent_usd / last.brent_eur : null;
+
+  const N = 20;
+  const mid = prices.slice(-N).reduce((a, b) => a + b, 0) / N;
+  const std = Math.sqrt(prices.slice(-N).reduce((a, b) => a + (b - mid) ** 2, 0) / N);
+  const bbUp = mid + 2 * std, bbDn = mid - 2 * std;
+  const lastP = prices[prices.length - 1];
+  let bbSig = 'Neutre', bbClass = 'neutral';
+  if (lastP > bbUp) { bbSig = 'Surachat'; bbClass = 'bear'; }
+  else if (lastP < bbDn) { bbSig = 'Survente'; bbClass = 'bull'; }
+
+  const spread = last?.prix_gazole && last?.brent_eur ? last.prix_gazole - last.brent_eur / 159 : null;
+
+  const corrVal = (() => {
+    const d = filteredData.filter(d => d.brent_eur && d.prix_gazole);
+    if (d.length < 30) return null;
+    const win = d.slice(-30);
+    return pearson(win.map(w => w.brent_eur), win.map(w => w.prix_gazole));
+  })();
+
+  const volVal = (() => {
+    if (prices.length < 31) return null;
+    const rets = prices.slice(-31).map((p, i, a) => i === 0 ? null : Math.log(p / a[i - 1])).filter(v => v !== null);
+    const mean = rets.reduce((a, b) => a + b, 0) / rets.length;
+    const s = Math.sqrt(rets.reduce((a, b) => a + (b - mean) ** 2, 0) / rets.length);
+    return s * Math.sqrt(252) * 100;
+  })();
+
+  const rows = [
+    ['RSI (14j)', rsiVal !== undefined ? rsiVal.toFixed(1) : '—', rsiVal > 70 ? '<span class="badge overbought">Surachat</span>' : rsiVal < 30 ? '<span class="badge oversold">Survente</span>' : '<span class="badge neutral">Neutre</span>'],
+    ['MACD (12/26)', lastMACD !== undefined ? lastMACD.toFixed(4) : '—', lastMACD > lastSignal ? '<span class="badge bull">Haussier</span>' : '<span class="badge bear">Baissier</span>'],
+    ['Bollinger 20j', `${bbDn.toFixed(3)} – ${bbUp.toFixed(3)}`, `<span class="badge ${bbClass}">${bbSig}</span>`],
+    ['Spread raffinage', spread !== null ? spread.toFixed(3) + ' €/L' : '—', spread > 0.8 ? '<span class="badge bear">Élevé</span>' : '<span class="badge bull">Normal</span>'],
+    ['Corrélation 30j', corrVal !== null ? corrVal.toFixed(3) : '—', corrVal > 0.7 ? '<span class="badge bull">Forte</span>' : corrVal > 0.4 ? '<span class="badge neutral">Modérée</span>' : '<span class="badge bear">Faible</span>'],
+    ['Volatilité ann.', volVal !== null ? volVal.toFixed(1) + ' %' : '—', volVal > 20 ? '<span class="badge bear">Élevée</span>' : '<span class="badge neutral">Normale</span>'],
+    ['EUR/USD impl.', eurusd !== null ? eurusd.toFixed(4) : '—', ''],
+  ];
+
+  document.getElementById('ind-tbody').innerHTML = rows.map(([label, val, sig]) =>
+    `<tr><td>${label}</td><td class="ind-value">${val}</td><td>${sig}</td></tr>`
+  ).join('');
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function chartOpts({ yLabel = '', thinX = false } = {}) {
+  return {
+    responsive: true,
+    maintainAspectRatio: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+    scales: {
+      x: { ticks: { maxTicksLimit: thinX ? 6 : 10, font: { family: "'DM Mono', monospace", size: 10 }, color: '#9e9b94' }, grid: { color: '#e2e0d8' } },
+      y: { ticks: { font: { family: "'DM Mono', monospace", size: 10 }, color: '#9e9b94' }, grid: { color: '#e2e0d8' } }
+    }
+  };
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function setStatus(state, text) {
+  const dot = document.getElementById('status-dot');
+  dot.className = 'status-dot ' + (state === 'loading' ? 'loading' : state === 'error' ? 'error' : '');
+  document.getElementById('status-text').textContent = text;
+}
+
+function showError(msg) {
+  document.getElementById('error-zone').innerHTML = `<div class="error-msg">⚠ Erreur : ${msg}</div>`;
+}
+
+// Register annotation plugin
+if (typeof Chart !== 'undefined' && Chart.register) {
+  // chartjs-plugin-annotation auto-registers
+}
 </script>
 </body>
 </html>
