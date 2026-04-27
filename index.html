@@ -463,24 +463,38 @@ async function fetchFile(path, token){
 }
 
 function parseCSV(text){
-  // Strip BOM, normalise line endings
+  // 1. Nettoyage des caractères invisibles et normalisation des sauts de ligne
   text = text.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
-  const lines = text.trim().split('\n').filter(l=>l.trim());
+  
+  // 2. On sépare les lignes et on FILTRE la ligne "sep=;"
+  const allLines = text.trim().split('\n').filter(l => l.trim());
+  const lines = allLines.filter(l => !l.startsWith('sep=')); 
+
   if(!lines.length) throw new Error('CSV vide');
-  // Detect separator
-  const sep = lines[0].includes(';') ? ';' : ',';
-  const header = lines[0].split(sep).map(h=>h.trim());
+
+  // 3. Détection du séparateur (on regarde la ligne des en-têtes réelle)
+  const firstDataLine = lines[0];
+  const sep = firstDataLine.includes(';') ? ';' : ',';
+  
+  // 4. Extraction des en-têtes
+  const header = firstDataLine.split(sep).map(h => h.trim().toLowerCase());
+  
+  // Vérification des colonnes requises
   const required = ['date','prix_gazole','brent_usd','brent_eur'];
-  required.forEach(c=>{ if(!header.includes(c)) throw new Error(`Colonne manquante dans CSV: "${c}" (colonnes: ${header.join(', ')})`); });
-  return lines.slice(1).filter(l=>l.trim()).map(line=>{
-    const vals=line.split(sep);
-    const obj={};
-    header.forEach((h,i)=>{
-      const raw=(vals[i]||'').trim().replace(',','.');
-      obj[h]=(raw!==''&&!isNaN(raw))?parseFloat(raw):raw;
+  required.forEach(c => { 
+    if(!header.includes(c)) throw new Error(`Colonne manquante : "${c}" (Colonnes trouvées : ${header.join(', ')})`); 
+  });
+
+  // 5. Parsing des lignes de données
+  return lines.slice(1).map(line => {
+    const vals = line.split(sep);
+    const obj = {};
+    header.forEach((h, i) => {
+      let raw = (vals[i] || '').trim().replace(',', '.'); // On gère la virgule Excel
+      obj[h] = (raw !== '' && !isNaN(raw)) ? parseFloat(raw) : raw;
     });
     return obj;
-  }).filter(r=>r.date && typeof r.prix_gazole==='number' && !isNaN(r.prix_gazole));
+  }).filter(r => r.date && typeof r.prix_gazole === 'number');
 }
 
 async function loadData(){
