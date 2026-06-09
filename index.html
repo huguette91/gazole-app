@@ -6,352 +6,590 @@
 <title>Observatoire Carburant</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#f2f1ec; --surface:#fff; --surface2:#f8f7f3; --surface3:#eeede8;
-  --border:#e0ddd5; --border2:#ccc9c0;
-  --text:#18170f; --text2:#65625a; --text3:#9c9890;
-  --accent:#c85a22; --accent-h:#b34e1c;
-  --blue:#2563c8; --green:#1e9e5c; --purple:#7c3aed; --orange:#d97706;
-  --red:#dc2626;
-  --mono:'DM Mono',monospace; --sans:'Sora',sans-serif;
-  --nav:220px; --hdr:54px;
+  --bg: #f9f8f6;
+  --ink: #111110;
+  --ink2: #6b6a67;
+  --ink3: #b0aea8;
+  --line: #e5e3de;
+  --line2: #d0cdc7;
+  --accent: #c85a22;
+  --accent-dim: rgba(200,90,34,.12);
+  --blue: #2458b8;
+  --green: #1a8f52;
+  --red: #c0281e;
+  --orange: #c47a0a;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Inter', sans-serif;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);font-family:var(--sans);color:var(--text);font-size:14px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  font-family: var(--sans);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
 
-/* TOPBAR */
-.topbar{height:var(--hdr);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;z-index:50}
-.logo{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center}
-.logo svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.2}
-.tb-title{font-size:15px;font-weight:600;letter-spacing:-.02em}
-.tb-repo{font-size:11px;color:var(--text3);font-family:var(--mono)}
-.tb-space{flex:1}
-.status-pill{display:flex;align-items:center;gap:7px;font-size:12px;font-family:var(--mono);color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px}
-.dot{width:7px;height:7px;border-radius:50%;background:#ccc;flex-shrink:0}
-.dot.ok{background:var(--green)}
-.dot.loading{background:var(--orange);animation:blink 1s infinite}
-.dot.error{background:var(--red)}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.reload-btn{display:flex;align-items:center;gap:6px;font-size:12px;font-family:var(--sans);color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;cursor:pointer;transition:border-color .15s,color .15s}
-.reload-btn:hover{border-color:var(--accent);color:var(--accent)}
-.reload-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
+/* ── HEADER ── */
+.hdr {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  padding: 0 32px;
+  height: 52px;
+  display: flex; align-items: center; gap: 24px;
+}
+.hdr-logo {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -.02em;
+  color: var(--ink);
+  display: flex; align-items: center; gap: 8px;
+}
+.hdr-logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.hdr-nav {
+  display: flex; align-items: center; gap: 2px;
+  flex: 1;
+}
+.hdr-link {
+  font-size: 13px; color: var(--ink2);
+  padding: 6px 12px; border-radius: 6px;
+  cursor: pointer; border: none; background: none;
+  font-family: var(--sans);
+  transition: background .1s, color .1s;
+  white-space: nowrap;
+}
+.hdr-link:hover { background: var(--line); color: var(--ink); }
+.hdr-link.active { color: var(--ink); font-weight: 500; background: var(--line); }
+.hdr-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.period-bar { display: flex; gap: 2px; }
+.pp {
+  font-size: 12px; font-family: var(--mono);
+  padding: 4px 9px; border-radius: 5px;
+  background: none; border: none;
+  color: var(--ink3); cursor: pointer;
+  transition: background .1s, color .1s;
+}
+.pp:hover { background: var(--line); color: var(--ink2); }
+.pp.active { background: var(--ink); color: var(--bg); }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink3); }
+.status-dot.ok { background: var(--green); }
+.status-dot.loading { background: var(--orange); animation: pulse 1s infinite; }
+.status-dot.error { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+.status-txt { font-size: 11px; font-family: var(--mono); color: var(--ink3); }
+.reload-btn {
+  font-size: 12px; font-family: var(--sans);
+  color: var(--ink2); background: none;
+  border: 1px solid var(--line2); border-radius: 6px;
+  padding: 5px 11px; cursor: pointer;
+  transition: border-color .1s, color .1s;
+  display: flex; align-items: center; gap: 5px;
+}
+.reload-btn:hover { border-color: var(--ink2); color: var(--ink); }
+.reload-btn svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; }
 
-/* LAYOUT */
-.body-wrap{display:flex;flex:1;overflow:hidden}
+/* ── PAGES ── */
+.page { display: none; }
+.page.active { display: block; }
 
-/* SIDEBAR */
-.sidebar{width:var(--nav);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;padding:16px 0}
-.nav-section{padding:0 14px;margin-bottom:4px}
-.nav-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:0 8px;margin-bottom:4px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--text2);transition:background .12s,color .12s;margin-bottom:1px}
-.nav-item svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;flex-shrink:0}
-.nav-item:hover{background:var(--surface2);color:var(--text)}
-.nav-item.active{background:#fdf1ea;color:var(--accent);font-weight:500}
-.nav-item.active svg{stroke:var(--accent)}
-.nav-div{border:none;border-top:1px solid var(--border);margin:10px 14px}
-.nav-spacer{flex:1}
-.period-section{padding:0 14px 14px}
-.period-pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.pp{font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;color:var(--text2);transition:all .12s}
-.pp:hover{border-color:var(--accent);color:var(--accent)}
-.pp.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* ── CONTENT WRAPPER ── */
+.wrap { max-width: 1200px; margin: 0 auto; padding: 36px 32px 64px; }
 
-/* CONTENT */
-.content{flex:1;overflow-y:auto}
-.page{display:none;padding:22px 24px;max-width:1500px}
-.page.active{display:block}
-.page-title{font-size:20px;font-weight:600;letter-spacing:-.02em;margin-bottom:3px}
-.page-sub{font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:20px}
+/* ── SECTION LABEL ── */
+.section-eyebrow {
+  font-size: 10px; font-family: var(--mono);
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--ink3); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-eyebrow::after {
+  content: ''; flex: 1; height: 1px; background: var(--line);
+}
 
-/* KPI */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:11px;margin-bottom:18px}
-.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:14px 15px;position:relative;overflow:hidden}
-.kpi-stripe{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:11px 0 0 11px}
-.kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:5px}
-.kpi-val{font-size:21px;font-weight:600;font-family:var(--mono);letter-spacing:-.02em;line-height:1.1}
-.kpi-val.up{color:var(--red)} .kpi-val.dn{color:var(--green)}
-.kpi-delta{font-size:11px;font-family:var(--mono);margin-top:4px;color:var(--text3)}
-.kpi-delta.up{color:var(--red)} .kpi-delta.dn{color:var(--green)}
+/* ── KPI ROW ── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  margin-bottom: 40px;
+}
+.kpi {
+  padding: 20px 20px 18px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.kpi-label {
+  font-size: 10px; font-family: var(--mono);
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--ink3); margin-bottom: 8px;
+}
+.kpi-val {
+  font-size: 22px; font-weight: 600; font-family: var(--mono);
+  letter-spacing: -.03em; line-height: 1;
+  color: var(--ink);
+}
+.kpi-val.up { color: var(--red); }
+.kpi-val.dn { color: var(--green); }
+.kpi-delta {
+  font-size: 11px; font-family: var(--mono);
+  color: var(--ink3); margin-top: 5px;
+}
+.kpi-delta.up { color: var(--red); }
+.kpi-delta.dn { color: var(--green); }
 
-/* CHART CARDS */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-bottom:13px}
-.g21{display:grid;grid-template-columns:2fr 1fr;gap:13px;margin-bottom:13px}
-.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:16px}
-.cc-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
-.cc-title{font-size:13px;font-weight:600}
-.cc-sub{font-size:11px;color:var(--text3);margin-top:2px}
-.cc-badge{font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);white-space:nowrap}
-.cc-badge.bull{background:#e6f9ee;border-color:#b6e8cd;color:#166534}
-.cc-badge.bear{background:#fef1f1;border-color:#fac5c5;color:#991b1b}
+/* ── MAE BANNER ── */
+.mae-banner {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 20px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 0;
+  margin-bottom: 40px;
+}
+.mae-label {
+  font-size: 10px; font-family: var(--mono);
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--ink3);
+}
+.mae-val {
+  font-size: 24px; font-weight: 600; font-family: var(--mono);
+  color: var(--accent); letter-spacing: -.03em;
+}
+.mae-unit { font-size: 13px; color: var(--ink3); font-family: var(--mono); }
+.mae-sep { width: 1px; height: 32px; background: var(--line); }
+.mae-meta { font-size: 12px; color: var(--ink2); font-family: var(--mono); }
+.mae-desc { font-size: 12px; color: var(--ink3); margin-top: 2px; }
 
-/* LEGEND */
-.legend{display:flex;gap:13px;flex-wrap:wrap;margin-top:8px}
-.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)}
-.leg-line{width:16px;height:2px;border-radius:1px}
+/* ── CHART GRID ── */
+.chart-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); margin-bottom: 1px; }
+.chart-grid-main { background: var(--line); margin-bottom: 40px; }
+.chart-panel {
+  background: var(--bg);
+  padding: 20px 22px 16px;
+}
+.chart-panel.full { }
+.panel-title { font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+.panel-sub { font-size: 11px; font-family: var(--mono); color: var(--ink3); margin-bottom: 14px; }
+.panel-badge {
+  display: inline-block;
+  font-size: 10px; font-family: var(--mono);
+  padding: 2px 8px;
+  border: 1px solid var(--line2);
+  color: var(--ink2);
+}
+.panel-badge.bull { border-color: #b6e8cd; color: var(--green); background: #f0faf5; }
+.panel-badge.bear { border-color: #fac5c5; color: var(--red); background: #fef5f5; }
+.panel-badge.warn { border-color: #f5d99a; color: var(--orange); background: #fdfaf0; }
+.panel-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
 
-/* SPREAD DECOMP */
-.spr-row{display:flex;align-items:center;gap:9px;margin-bottom:6px;font-size:12px}
-.spr-lbl{width:75px;color:var(--text2)}
-.spr-bg{flex:1;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
-.spr-fill{height:100%;border-radius:3px}
-.spr-val{width:55px;text-align:right;font-family:var(--mono);font-size:11px}
+/* ── LEGEND ── */
+.legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
+.leg { display: flex; align-items: center; gap: 5px; font-size: 11px; font-family: var(--mono); color: var(--ink3); }
+.leg-line { width: 16px; height: 2px; border-radius: 1px; }
 
-/* INDICATOR TABLE */
-.ind-table{width:100%;border-collapse:collapse;font-size:12px}
-.ind-table th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);text-align:left;padding-bottom:7px;border-bottom:1px solid var(--border)}
-.ind-table td{padding:8px 0;border-bottom:1px solid var(--border)}
-.ind-table tr:last-child td{border:none}
-.ind-table .mono{font-family:var(--mono);font-weight:500}
-.badge{display:inline-block;font-size:10px;font-family:var(--mono);font-weight:500;padding:2px 7px;border-radius:20px}
-.badge.bull{background:#e6f9ee;color:#166534}
-.badge.bear{background:#fef1f1;color:#991b1b}
-.badge.neutral{background:var(--surface3);color:var(--text2)}
-.badge.warn{background:#fff8e6;color:#92400e}
+/* ── SPREAD DECOMP ── */
+.spr-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 12px; }
+.spr-lbl { width: 70px; color: var(--ink2); font-family: var(--mono); font-size: 11px; }
+.spr-bg { flex: 1; height: 3px; background: var(--line); }
+.spr-fill { height: 100%; }
+.spr-val { width: 60px; text-align: right; font-family: var(--mono); font-size: 11px; color: var(--ink2); }
 
-/* PREDICTIONS TABLE */
-.pred-table{width:100%;border-collapse:collapse;font-size:13px}
-.pred-table th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);text-align:left;padding-bottom:7px;border-bottom:1px solid var(--border)}
-.pred-table td{padding:9px 0;border-bottom:1px solid var(--border);font-family:var(--mono)}
-.pred-table tr:last-child td{border:none}
-.pos{color:var(--red)} .neg{color:var(--green)}
+/* ── SIGNALS TABLE ── */
+.sig-table { width: 100%; border-collapse: collapse; }
+.sig-table th {
+  font-size: 10px; font-family: var(--mono);
+  text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink3); text-align: left;
+  padding-bottom: 8px; border-bottom: 1px solid var(--line);
+  font-weight: 500;
+}
+.sig-table td { padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.sig-table tr:last-child td { border: none; }
+.sig-table .mono { font-family: var(--mono); }
+.badge {
+  display: inline-block; font-size: 10px; font-family: var(--mono);
+  padding: 2px 7px; border: 1px solid transparent;
+}
+.badge.bull { border-color: #b6e8cd; color: var(--green); background: #f0faf5; }
+.badge.bear { border-color: #fac5c5; color: var(--red); background: #fef5f5; }
+.badge.neutral { border-color: var(--line2); color: var(--ink3); }
+.badge.warn { border-color: #f5d99a; color: var(--orange); background: #fdfaf0; }
 
-/* SETTINGS */
-.settings-section{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:20px 22px;margin-bottom:14px}
-.settings-section h3{font-size:13px;font-weight:600;margin-bottom:4px}
-.settings-section p{font-size:12px;color:var(--text2);margin-bottom:13px;line-height:1.6}
-.field-row{display:flex;gap:9px;align-items:center}
-.field-row input{flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:var(--mono);font-size:13px;background:var(--surface2);color:var(--text);outline:none;transition:border-color .15s}
-.field-row input:focus{border-color:var(--accent)}
-.btn{padding:9px 16px;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:background .15s}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:var(--accent-h)}
-.btn-secondary{background:var(--surface3);color:var(--text);border:1px solid var(--border)}
-.btn-secondary:hover{border-color:var(--border2)}
-.token-ok{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--green);font-family:var(--mono);margin-top:7px}
-.token-preview{font-family:var(--mono);font-size:12px;color:var(--text2);margin-top:5px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px}
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.info-row{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:11px 13px}
-.info-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);font-weight:600;margin-bottom:3px}
-.info-val{font-size:12px;font-family:var(--mono);color:var(--text)}
+/* ── PRED TABLE ── */
+.pred-table { width: 100%; border-collapse: collapse; }
+.pred-table th {
+  font-size: 10px; font-family: var(--mono);
+  text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink3); text-align: left;
+  padding-bottom: 8px; border-bottom: 1px solid var(--line);
+  font-weight: 500;
+}
+.pred-table td { padding: 9px 0; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 12px; }
+.pred-table tr:last-child td { border: none; }
+.pos { color: var(--red); }
+.neg { color: var(--green); }
 
-/* ERROR / EMPTY */
-.err-box{background:#fef2f2;border:1px solid #fecaca;border-radius:9px;padding:13px 15px;font-size:13px;color:#991b1b;margin-bottom:15px;display:none}
-.err-box.show{display:block}
-.empty{text-align:center;padding:50px 20px;color:var(--text3)}
-.empty .ico{font-size:36px;margin-bottom:12px}
-.empty a{color:var(--accent);cursor:pointer;text-decoration:underline}
+/* ── ERROR / EMPTY ── */
+.err-box {
+  font-size: 12px; font-family: var(--mono);
+  color: var(--red); background: #fef5f5;
+  border: 1px solid #fac5c5; padding: 12px 16px;
+  margin-bottom: 24px; display: none;
+}
+.err-box.show { display: block; }
+.empty { text-align: center; padding: 80px 20px; color: var(--ink3); }
+.empty .ico { font-size: 32px; margin-bottom: 14px; }
+.empty a { color: var(--accent); cursor: pointer; text-decoration: underline; }
+.empty p { font-size: 13px; line-height: 1.6; }
 
-@media(max-width:860px){.sidebar{display:none}.g2,.g3,.g21{grid-template-columns:1fr}.info-grid{grid-template-columns:1fr}.page{padding:14px}}
+/* ── SETTINGS ── */
+.settings-block { border-top: 1px solid var(--line); padding: 28px 0; }
+.settings-block:first-child { border-top: none; padding-top: 0; }
+.settings-block h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.settings-block p { font-size: 12px; color: var(--ink2); margin-bottom: 14px; line-height: 1.6; }
+.field-row { display: flex; gap: 8px; align-items: center; }
+.field-row input {
+  flex: 1; padding: 8px 12px;
+  border: 1px solid var(--line2); border-radius: 0;
+  font-family: var(--mono); font-size: 13px;
+  background: white; color: var(--ink); outline: none;
+  transition: border-color .15s;
+}
+.field-row input:focus { border-color: var(--ink); }
+.btn {
+  padding: 8px 16px; font-family: var(--sans); font-size: 13px;
+  font-weight: 500; cursor: pointer; border: none; border-radius: 0;
+  transition: opacity .12s;
+}
+.btn:hover { opacity: .82; }
+.btn-primary { background: var(--ink); color: var(--bg); }
+.btn-secondary { background: white; color: var(--ink); border: 1px solid var(--line2); }
+.token-ok { font-size: 12px; color: var(--green); font-family: var(--mono); margin-top: 7px; display: flex; align-items: center; gap: 5px; }
+.token-preview { font-family: var(--mono); font-size: 12px; color: var(--ink2); margin-top: 5px; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.info-row { padding: 10px 12px; border: 1px solid var(--line); }
+.info-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink3); font-family: var(--mono); margin-bottom: 2px; }
+.info-val { font-size: 12px; font-family: var(--mono); color: var(--ink); }
+
+/* ── RESPONSIVE ── */
+@media(max-width:860px){
+  .hdr { padding: 0 16px; gap: 10px; }
+  .hdr-link span { display: none; }
+  .kpi-row { grid-template-columns: repeat(3,1fr); }
+  .chart-grid-2 { grid-template-columns: 1fr; }
+  .wrap { padding: 20px 16px 48px; }
+  .period-bar { display: none; }
+  .mae-banner { flex-wrap: wrap; gap: 10px; }
+  .info-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
 
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="logo"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-  <div>
-    <div class="tb-title">Observatoire Carburant</div>
-    <div class="tb-repo">huguette91 / prix-gasoil</div>
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-logo-dot"></div>
+    Observatoire Carburant
   </div>
-  <div class="tb-space"></div>
-  <button class="reload-btn" onclick="loadData()">
-    <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-    Actualiser
-  </button>
-  <div class="status-pill"><div class="dot loading" id="dot"></div><span id="status-txt">En attente</span></div>
-</div>
-
-<div class="body-wrap">
-
-<!-- SIDEBAR -->
-<nav class="sidebar">
-  <div class="nav-section">
-    <div class="nav-label">Pages</div>
-    <div class="nav-item active" onclick="goPage('overview')" id="nav-overview">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Vue d'ensemble
+  <nav class="hdr-nav">
+    <button class="hdr-link active" onclick="goPage('overview')" id="nav-overview">Vue d'ensemble</button>
+    <button class="hdr-link" onclick="goPage('historique')" id="nav-historique">Historique</button>
+    <button class="hdr-link" onclick="goPage('indicateurs')" id="nav-indicateurs">Indicateurs</button>
+    <button class="hdr-link" onclick="goPage('predictions')" id="nav-predictions">Prédictions</button>
+  </nav>
+  <div class="hdr-right">
+    <div class="period-bar">
+      <button class="pp" onclick="setPeriod(30)">1M</button>
+      <button class="pp" onclick="setPeriod(90)">3M</button>
+      <button class="pp" onclick="setPeriod(180)">6M</button>
+      <button class="pp" onclick="setPeriod(365)">1A</button>
+      <button class="pp active" onclick="setPeriod(0)">Tout</button>
     </div>
-    <div class="nav-item" onclick="goPage('historique')" id="nav-historique">
-      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      Prix &amp; historique
-    </div>
-    <div class="nav-item" onclick="goPage('indicateurs')" id="nav-indicateurs">
-      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      Indicateurs tech.
-    </div>
-    <div class="nav-item" onclick="goPage('predictions')" id="nav-predictions">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Prédictions J+10
-    </div>
+    <button class="reload-btn" onclick="loadData()">
+      <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      Actualiser
+    </button>
+    <div class="status-dot loading" id="dot"></div>
+    <span class="status-txt" id="status-txt">En attente</span>
   </div>
-  <hr class="nav-div">
-  <div class="period-section">
-    <div class="nav-label">Période</div>
-    <div class="period-pills">
-      <div class="pp" onclick="setPeriod(30)">1M</div>
-      <div class="pp" onclick="setPeriod(90)">3M</div>
-      <div class="pp" onclick="setPeriod(180)">6M</div>
-      <div class="pp" onclick="setPeriod(365)">1A</div>
-      <div class="pp active" onclick="setPeriod(0)">Tout</div>
-    </div>
-  </div>
-  <div class="nav-spacer"></div>
-  <hr class="nav-div">
-  <div class="nav-section">
-    <div class="nav-item" onclick="goPage('parametres')" id="nav-parametres">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-      Paramètres
-    </div>
-  </div>
-</nav>
+</header>
 
-<div class="content">
-
-<!-- ══ PAGE : VUE D'ENSEMBLE ══════════════════════════════════════════════ -->
+<!-- ══ PAGE : VUE D'ENSEMBLE ══ -->
 <div class="page active" id="page-overview">
-  <div class="page-title">Vue d'ensemble</div>
-  <div class="page-sub" id="sub-overview">Chargement des données depuis GitHub…</div>
+<div class="wrap">
   <div class="err-box" id="err-box"></div>
-  <div id="no-data" class="empty" style="display:none">
+  <div id="no-data" class="empty">
     <div class="ico">⛽</div>
-    <p>Aucune donnée. Allez dans <a onclick="goPage('parametres')">Paramètres</a> pour configurer votre token, puis cliquez sur <strong>Actualiser</strong>.</p>
+    <p>Aucune donnée disponible.<br>Allez dans <a onclick="goPage('parametres')">Paramètres</a> pour configurer votre token, puis cliquez sur <strong>Actualiser</strong>.</p>
   </div>
-  <div id="main-content">
-    <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-stripe" style="background:var(--accent)"></div><div class="kpi-label">Gazole</div><div class="kpi-val" id="k-gaz">—</div><div class="kpi-delta" id="k-gaz-d">—</div></div>
-      <div class="kpi-card"><div class="kpi-stripe" style="background:var(--blue)"></div><div class="kpi-label">Brent USD</div><div class="kpi-val" id="k-busd">—</div><div class="kpi-delta" id="k-busd-d">—</div></div>
-      <div class="kpi-card"><div class="kpi-stripe" style="background:var(--blue)"></div><div class="kpi-label">Brent EUR</div><div class="kpi-val" id="k-beur">—</div><div class="kpi-delta" id="k-beur-d">—</div></div>
-      <div class="kpi-card"><div class="kpi-stripe" style="background:var(--purple)"></div><div class="kpi-label">EUR/USD impl.</div><div class="kpi-val" id="k-eurusd">—</div><div class="kpi-delta" id="k-eurusd-d">—</div></div>
-      <div class="kpi-card"><div class="kpi-stripe" style="background:var(--green)"></div><div class="kpi-label">Spread raffinage</div><div class="kpi-val" id="k-spread">—</div><div class="kpi-delta" id="k-spread-d">—</div></div>
-      <div class="kpi-card"><div class="kpi-stripe" style="background:var(--orange)"></div><div class="kpi-label">Prédiction J+1</div><div class="kpi-val" id="k-pred">—</div><div class="kpi-delta" id="k-pred-d">—</div></div>
+  <div id="main-content" style="display:none">
+
+    <!-- KPIs -->
+    <div class="section-eyebrow">Données en temps réel</div>
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">Gazole</div>
+        <div class="kpi-val" id="k-gaz">—</div>
+        <div class="kpi-delta" id="k-gaz-d">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Brent USD</div>
+        <div class="kpi-val" id="k-busd">—</div>
+        <div class="kpi-delta" id="k-busd-d">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Brent EUR</div>
+        <div class="kpi-val" id="k-beur">—</div>
+        <div class="kpi-delta" id="k-beur-d">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">EUR/USD impl.</div>
+        <div class="kpi-val" id="k-eurusd">—</div>
+        <div class="kpi-delta" id="k-eurusd-d">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Spread raffinage</div>
+        <div class="kpi-val" id="k-spread">—</div>
+        <div class="kpi-delta" id="k-spread-d">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Prédiction J+1</div>
+        <div class="kpi-val" id="k-pred">—</div>
+        <div class="kpi-delta" id="k-pred-d">—</div>
+      </div>
     </div>
-    <div class="g21">
-      <div class="chart-card">
-        <div class="cc-head"><div><div class="cc-title">Prix gazole · Brent converti · Prédictions</div><div class="cc-sub">€/L — historique + prévisions J+10</div></div></div>
-        <canvas id="c-main" height="260"></canvas>
-        <div class="legend">
-          <div class="leg"><div class="leg-line" style="background:var(--accent)"></div>Gazole</div>
-          <div class="leg"><div class="leg-line" style="background:var(--blue)"></div>Brent €/L</div>
-          <div class="leg"><div style="width:16px;border-top:2px dashed var(--orange);opacity:.8"></div>Prévision</div>
+
+    <!-- MAE Banner -->
+    <div class="section-eyebrow">Modèle XGBoost</div>
+    <div class="mae-banner" id="mae-banner">
+      <div>
+        <div class="mae-label">MAE — Erreur absolue moyenne</div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+          <span class="mae-val" id="mae-val">—</span>
+          <span class="mae-unit">cts/L</span>
         </div>
       </div>
-      <div class="chart-card">
-        <div class="cc-head"><div><div class="cc-title">Spread raffinage</div><div class="cc-sub">Gazole − Brent/159 (€/L)</div></div></div>
+      <div class="mae-sep"></div>
+      <div>
+        <div class="mae-meta" id="mae-lag">Lag optimal : —</div>
+        <div class="mae-desc">Écart moyen entre prix prédit et prix réel</div>
+      </div>
+      <div class="mae-sep"></div>
+      <div>
+        <div class="mae-meta" id="mae-interpret">—</div>
+        <div class="mae-desc" id="mae-quality">—</div>
+      </div>
+    </div>
+
+    <!-- Graphe principal -->
+    <div class="section-eyebrow">Historique des prix</div>
+    <div class="chart-grid-main">
+      <div class="chart-panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">Prix gazole · Brent €/L · Prévisions J+10</div>
+            <div class="panel-sub">€/L — données brutes + OLS</div>
+          </div>
+        </div>
+        <canvas id="c-main" height="220"></canvas>
+        <div class="legend">
+          <div class="leg"><div class="leg-line" style="background:#c85a22"></div>Gazole</div>
+          <div class="leg"><div class="leg-line" style="background:#2458b8"></div>Brent €/L</div>
+          <div class="leg"><div style="width:16px;border-top:2px dashed #c47a0a;opacity:.8"></div>Prévision</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spread + Signaux -->
+    <div class="section-eyebrow">Analyse</div>
+    <div class="chart-grid-2" style="margin-bottom:40px">
+      <div class="chart-panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">Spread raffinage</div>
+            <div class="panel-sub">Gazole − Brent/159 (€/L)</div>
+          </div>
+        </div>
         <canvas id="c-spread" height="130"></canvas>
-        <div style="margin-top:11px" id="spr-decomp"></div>
+        <div style="margin-top:14px" id="spr-decomp"></div>
+      </div>
+      <div class="chart-panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">RSI (14j)</div>
+            <div class="panel-sub">Surachat &gt;70 · Survente &lt;30</div>
+          </div>
+          <span class="panel-badge" id="rsi-badge-ov">—</span>
+        </div>
+        <canvas id="c-rsi-ov" height="130"></canvas>
       </div>
     </div>
-    <div class="g2">
-      <div class="chart-card">
-        <div class="cc-head"><div><div class="cc-title">RSI (14j)</div><div class="cc-sub">Surachat &gt;70 · Survente &lt;30</div></div><span class="cc-badge" id="rsi-badge-ov">—</span></div>
-        <canvas id="c-rsi-ov" height="150"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="cc-head"><div><div class="cc-title">Tableau des signaux</div><div class="cc-sub">Résumé technique automatique</div></div></div>
-        <table class="ind-table">
-          <thead><tr><th>Indicateur</th><th>Valeur</th><th>Signal</th></tr></thead>
-          <tbody id="ind-tbody"></tbody>
-        </table>
-      </div>
+
+    <!-- Table signaux -->
+    <div class="section-eyebrow">Signaux techniques</div>
+    <div style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:4px 0;margin-bottom:40px">
+      <table class="sig-table">
+        <thead><tr><th>Indicateur</th><th>Valeur</th><th>Signal</th></tr></thead>
+        <tbody id="ind-tbody"></tbody>
+      </table>
     </div>
-  </div>
+
+  </div><!-- /main-content -->
+</div>
 </div>
 
-<!-- ══ PAGE : HISTORIQUE ════════════════════════════════════════════════ -->
+<!-- ══ PAGE : HISTORIQUE ══ -->
 <div class="page" id="page-historique">
-  <div class="page-title">Prix &amp; historique</div>
-  <div class="page-sub">Séries temporelles brutes · Brent USD et EUR · Moyennes mobiles</div>
-  <div class="g2">
-    <div class="chart-card">
-      <div class="cc-head"><div><div class="cc-title">Bandes de Bollinger 20j</div><div class="cc-sub">σ×2 — zone de volatilité</div></div><span class="cc-badge" id="bb-badge">—</span></div>
-      <canvas id="c-bb" height="220"></canvas>
+<div class="wrap">
+  <div class="section-eyebrow">Séries temporelles</div>
+  <div class="chart-grid-2" style="margin-bottom:1px">
+    <div class="chart-panel">
+      <div class="panel-head">
+        <div><div class="panel-title">Bandes de Bollinger 20j</div><div class="panel-sub">σ×2 — zone de volatilité</div></div>
+        <span class="panel-badge" id="bb-badge">—</span>
+      </div>
+      <canvas id="c-bb" height="200"></canvas>
     </div>
-    <div class="chart-card">
-      <div class="cc-head"><div><div class="cc-title">Moyennes mobiles</div><div class="cc-sub">MA7 · MA30 · MA90</div></div></div>
-      <canvas id="c-ma" height="220"></canvas>
+    <div class="chart-panel">
+      <div class="panel-head">
+        <div><div class="panel-title">Moyennes mobiles</div><div class="panel-sub">MA7 · MA30 · MA90</div></div>
+      </div>
+      <canvas id="c-ma" height="200"></canvas>
       <div class="legend">
-        <div class="leg"><div class="leg-line" style="background:var(--accent)"></div>Gazole</div>
-        <div class="leg"><div class="leg-line" style="background:var(--purple)"></div>MA7</div>
-        <div class="leg"><div class="leg-line" style="background:var(--green)"></div>MA30</div>
-        <div class="leg"><div class="leg-line" style="background:var(--blue)"></div>MA90</div>
+        <div class="leg"><div class="leg-line" style="background:#c85a22"></div>Gazole</div>
+        <div class="leg"><div class="leg-line" style="background:#7c3aed"></div>MA7</div>
+        <div class="leg"><div class="leg-line" style="background:#1a8f52"></div>MA30</div>
+        <div class="leg"><div class="leg-line" style="background:#2458b8"></div>MA90</div>
       </div>
     </div>
   </div>
-  <div class="g2">
-    <div class="chart-card">
-      <div class="cc-head"><div><div class="cc-title">Brent USD vs EUR</div><div class="cc-sub">Effet de change sur le cours</div></div></div>
-      <canvas id="c-brent" height="200"></canvas>
+  <div class="chart-grid-2" style="margin-bottom:40px">
+    <div class="chart-panel">
+      <div class="panel-head">
+        <div><div class="panel-title">Brent USD vs EUR</div><div class="panel-sub">Effet de change</div></div>
+      </div>
+      <canvas id="c-brent" height="180"></canvas>
       <div class="legend">
-        <div class="leg"><div class="leg-line" style="background:var(--blue)"></div>Brent USD ($)</div>
-        <div class="leg"><div class="leg-line" style="background:var(--green)"></div>Brent EUR (€)</div>
+        <div class="leg"><div class="leg-line" style="background:#2458b8"></div>Brent USD</div>
+        <div class="leg"><div class="leg-line" style="background:#1a8f52"></div>Brent EUR</div>
       </div>
     </div>
-    <div class="chart-card">
-      <div class="cc-head"><div><div class="cc-title">Taux EUR/USD implicite</div><div class="cc-sub">brent_usd / brent_eur</div></div></div>
-      <canvas id="c-eurusd" height="200"></canvas>
+    <div class="chart-panel">
+      <div class="panel-head">
+        <div><div class="panel-title">EUR/USD implicite</div><div class="panel-sub">brent_usd / brent_eur</div></div>
+      </div>
+      <canvas id="c-eurusd" height="180"></canvas>
     </div>
   </div>
 </div>
+</div>
 
-<!-- ══ PAGE : INDICATEURS ═══════════════════════════════════════════════ -->
+<!-- ══ PAGE : INDICATEURS ══ -->
 <div class="page" id="page-indicateurs">
-  <div class="page-title">Indicateurs techniques</div>
-  <div class="page-sub">Calculs sur la période sélectionnée dans le menu latéral</div>
-  <div class="g2">
-    <div class="chart-card">
-      <div class="cc-head"><div><div class="cc-title">RSI (14j)</div><div class="cc-sub">Relative Strength Index</div></div><span class="cc-badge" id="rsi-badge-p">—</span></div>
-      <canvas id="c-rsi-p" height="200"></canvas>
+<div class="wrap">
+  <div class="section-eyebrow">Indicateurs techniques</div>
+  <div class="chart-grid-2" style="margin-bottom:1px">
+    <div class="chart-panel">
+      <div class="panel-head">
+        <div><div class="panel-title">RSI (14j)</div><div class="panel-sub">Relative Strength Index</div></div>
+        <span class="panel-badge" id="rsi-badge-p">—</span>
+      </div>
+      <canvas id="c-rsi-p" height="190"></canvas>
     </div>
-    <div class="chart-card">
-      <div class="cc-head"><div><div class="cc-title">MACD (12/26/9)</div><div class="cc-sub">Signal · Histogramme</div></div><span class="cc-badge" id="macd-badge">—</span></div>
-      <canvas id="c-macd" height="200"></canvas>
+    <div class="chart-panel">
+      <div class="panel-head">
+        <div><div class="panel-title">MACD (12/26/9)</div><div class="panel-sub">Signal · Histogramme</div></div>
+        <span class="panel-badge" id="macd-badge">—</span>
+      </div>
+      <canvas id="c-macd" height="190"></canvas>
       <div class="legend">
-        <div class="leg"><div class="leg-line" style="background:var(--blue)"></div>MACD</div>
-        <div class="leg"><div class="leg-line" style="background:var(--accent)"></div>Signal</div>
+        <div class="leg"><div class="leg-line" style="background:#2458b8"></div>MACD</div>
+        <div class="leg"><div class="leg-line" style="background:#c85a22"></div>Signal</div>
       </div>
     </div>
   </div>
-  <div class="g2">
-    <div class="chart-card">
-      <div class="cc-head"><div><div class="cc-title">Corrélation glissante 30j</div><div class="cc-sub">Brent EUR ↔ Gazole</div></div><span class="cc-badge" id="corr-badge">—</span></div>
-      <canvas id="c-corr" height="200"></canvas>
+  <div class="chart-grid-2" style="margin-bottom:40px">
+    <div class="chart-panel">
+      <div class="panel-head">
+        <div><div class="panel-title">Corrélation glissante 30j</div><div class="panel-sub">Brent EUR ↔ Gazole</div></div>
+        <span class="panel-badge" id="corr-badge">—</span>
+      </div>
+      <canvas id="c-corr" height="190"></canvas>
     </div>
-    <div class="chart-card">
-      <div class="cc-head"><div><div class="cc-title">Volatilité historique annualisée</div><div class="cc-sub">σ · fenêtre 30j · log-rendements</div></div><span class="cc-badge" id="vol-badge">—</span></div>
-      <canvas id="c-vol" height="200"></canvas>
+    <div class="chart-panel">
+      <div class="panel-head">
+        <div><div class="panel-title">Volatilité annualisée</div><div class="panel-sub">σ · fenêtre 30j · log-rendements</div></div>
+        <span class="panel-badge" id="vol-badge">—</span>
+      </div>
+      <canvas id="c-vol" height="190"></canvas>
     </div>
   </div>
 </div>
+</div>
 
-<!-- ══ PAGE : PRÉDICTIONS ════════════════════════════════════════════════ -->
+<!-- ══ PAGE : PRÉDICTIONS ══ -->
 <div class="page" id="page-predictions">
-  <div class="page-title">Prédictions J+10</div>
-  <div class="page-sub">Données chargées depuis data/previsions.json</div>
-  <div class="g21">
-    <div class="chart-card">
-      <div class="cc-head"><div><div class="cc-title">Courbe prévisionnelle</div><div class="cc-sub">60 derniers jours + 10j de prévisions</div></div></div>
-      <canvas id="c-pred" height="270"></canvas>
+<div class="wrap">
+
+  <!-- MAE en haut de la page prédictions aussi -->
+  <div class="section-eyebrow">Précision du modèle</div>
+  <div class="mae-banner" style="margin-bottom:40px">
+    <div>
+      <div class="mae-label">MAE — Erreur absolue moyenne</div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+        <span class="mae-val" id="mae-val-2">—</span>
+        <span class="mae-unit">cts/L</span>
+      </div>
     </div>
-    <div class="chart-card">
-      <div class="cc-head"><div><div class="cc-title">Détail prévisions</div><div class="cc-sub">Prix prédit · Δ vs dernier connu</div></div></div>
+    <div class="mae-sep"></div>
+    <div>
+      <div class="mae-meta" id="mae-lag-2">Lag optimal : —</div>
+      <div class="mae-desc">Écart moyen entre prix prédit et prix réel sur l'ensemble du jeu de test</div>
+    </div>
+    <div class="mae-sep"></div>
+    <div>
+      <div class="mae-meta" id="mae-interpret-2">—</div>
+      <div class="mae-desc" id="mae-quality-2">—</div>
+    </div>
+  </div>
+
+  <div class="section-eyebrow">Prévisions J+10</div>
+  <div class="chart-grid-2">
+    <div class="chart-panel">
+      <div class="panel-head">
+        <div><div class="panel-title">Courbe prévisionnelle</div><div class="panel-sub">60 derniers jours + 10j de prévisions</div></div>
+      </div>
+      <canvas id="c-pred" height="250"></canvas>
+    </div>
+    <div class="chart-panel">
+      <div class="panel-head">
+        <div><div class="panel-title">Détail des prévisions</div><div class="panel-sub">Prix prédit · Δ vs dernier connu</div></div>
+      </div>
       <table class="pred-table">
         <thead><tr><th>Date</th><th>Prix (€/L)</th><th>Δ vs auj.</th></tr></thead>
-        <tbody id="pred-tbody"><tr><td colspan="3" style="padding:20px 0;text-align:center;color:var(--text3)">—</td></tr></tbody>
+        <tbody id="pred-tbody"><tr><td colspan="3" style="padding:20px 0;text-align:center;color:var(--ink3)">—</td></tr></tbody>
       </table>
     </div>
   </div>
 </div>
+</div>
 
-<!-- ══ PAGE : PARAMÈTRES ═════════════════════════════════════════════════ -->
+<!-- ══ PAGE : PARAMÈTRES ══ -->
 <div class="page" id="page-parametres">
-  <div class="page-title">Paramètres</div>
-  <div class="page-sub">Configuration sauvegardée dans votre navigateur (localStorage)</div>
-
-  <div class="settings-section">
-    <h3>🔑 Token GitHub</h3>
+<div class="wrap" style="max-width:640px">
+  <div class="section-eyebrow">Configuration</div>
+  <div class="settings-block">
+    <h3>Token GitHub</h3>
     <p>Le token est stocké <strong>uniquement dans votre navigateur</strong>. Il ne transite pas par un serveur. Utilisez un token avec permission <code>Contents: Read</code> sur le dépôt privé.</p>
     <div class="field-row">
       <input type="password" id="token-field" placeholder="github_pat_11ANDS7JY0…" autocomplete="off">
@@ -361,8 +599,8 @@ body{background:var(--bg);font-family:var(--sans);color:var(--text);font-size:14
     <div id="token-status"></div>
   </div>
 
-  <div class="settings-section">
-    <h3>📁 Sources de données</h3>
+  <div class="settings-block">
+    <h3>Sources de données</h3>
     <p>Lues via <code>raw.githubusercontent.com</code> (fallback API GitHub) à chaque actualisation.</p>
     <div class="info-grid">
       <div class="info-row"><div class="info-lbl">Dépôt</div><div class="info-val">huguette91/prix-gasoil</div></div>
@@ -374,22 +612,21 @@ body{background:var(--bg);font-family:var(--sans);color:var(--text);font-size:14
     </div>
   </div>
 
-  <div class="settings-section">
-    <h3>⚙️ Actions</h3>
+  <div class="settings-block">
+    <h3>Actions</h3>
     <p>Chargez les données ou testez la connexion pour diagnostiquer d'éventuelles erreurs.</p>
-    <div style="display:flex;gap:9px;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-primary" onclick="loadData()">Charger / Actualiser</button>
       <button class="btn btn-secondary" onclick="testConnection()">Tester la connexion</button>
     </div>
-    <div id="test-result" style="margin-top:11px;font-size:12px;font-family:var(--mono);color:var(--text2)"></div>
+    <div id="test-result" style="margin-top:11px;font-size:12px;font-family:var(--mono);color:var(--ink2)"></div>
   </div>
+
+  <nav class="hdr-nav" style="display:none" id="nav-parametres"></nav>
+</div>
 </div>
 
-</div><!-- /content -->
-</div><!-- /body-wrap -->
-
 <script>
-// ── CONFIG ──────────────────────────────────────────────────────────────────
 const OWNER    = 'huguette91';
 const REPO     = 'prix-gasoil';
 const BRANCH   = 'main';
@@ -400,15 +637,14 @@ const LS_KEY   = 'gh_token_carburant_v1';
 let allData=[], predData=[], fd=[];
 let currentPeriod=0, charts={};
 
-// ── NAVIGATION ──────────────────────────────────────────────────────────────
 function goPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.hdr-link').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  document.getElementById('nav-'+id).classList.add('active');
+  const navEl = document.getElementById('nav-'+id);
+  if(navEl) navEl.classList.add('active');
 }
 
-// ── TOKEN ────────────────────────────────────────────────────────────────────
 function getToken(){ return localStorage.getItem(LS_KEY)||''; }
 function saveToken(){
   const v=document.getElementById('token-field').value.trim();
@@ -429,31 +665,25 @@ function renderTokenStatus(){
     el.innerHTML=`<div class="token-ok">✓ Token enregistré</div><div class="token-preview">${p}</div>`;
     f.value=''; f.placeholder=t.slice(0,20)+'… (déjà enregistré)';
   } else {
-    el.innerHTML='<span style="font-size:12px;color:var(--text3);font-family:var(--mono)">Aucun token enregistré</span>';
+    el.innerHTML='<span style="font-size:12px;color:var(--ink3);font-family:var(--mono)">Aucun token enregistré</span>';
     f.placeholder='github_pat_11ANDS7JY0…';
   }
 }
 
-// ── FETCH ───────────────────────────────────────────────────────────────────
 async function fetchFile(path, token){
-  // Method 1: raw.githubusercontent.com (no CORS issue, works with PAT)
   const rawUrl=`https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${path}`;
   try {
     const h = token ? {'Authorization':'token '+token} : {};
     const r = await fetch(rawUrl, {headers:h, cache:'no-store'});
     if(r.ok) return r.text();
-    // 404 or 401: fall through to API
   } catch(_){}
-
-  // Method 2: GitHub Contents API with raw Accept header
   const apiUrl=`https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}`;
   const r2 = await fetch(apiUrl, {
     headers:{
       'Authorization':'token '+token,
       'Accept':'application/vnd.github.v3.raw',
       'X-GitHub-Api-Version':'2022-11-28'
-    },
-    cache:'no-store'
+    }, cache:'no-store'
   });
   if(!r2.ok){
     const body = await r2.text().catch(()=>'');
@@ -463,96 +693,95 @@ async function fetchFile(path, token){
 }
 
 function parseCSV(text){
-  // 1. Nettoyage des caractères invisibles et normalisation des sauts de ligne
   text = text.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
-  
-  // 2. On sépare les lignes et on FILTRE la ligne "sep=;"
   const allLines = text.trim().split('\n').filter(l => l.trim());
-  const lines = allLines.filter(l => !l.startsWith('sep=')); 
-
+  const lines = allLines.filter(l => !l.startsWith('sep='));
   if(!lines.length) throw new Error('CSV vide');
-
-  // 3. Détection du séparateur (on regarde la ligne des en-têtes réelle)
   const firstDataLine = lines[0];
   const sep = firstDataLine.includes(';') ? ';' : ',';
-  
-  // 4. Extraction des en-têtes
   const header = firstDataLine.split(sep).map(h => h.trim().toLowerCase());
-  
-  // Vérification des colonnes requises
   const required = ['date','prix_gazole','brent_usd','brent_eur'];
-  required.forEach(c => { 
-    if(!header.includes(c)) throw new Error(`Colonne manquante : "${c}" (Colonnes trouvées : ${header.join(', ')})`); 
+  required.forEach(c => {
+    if(!header.includes(c)) throw new Error(`Colonne manquante : "${c}"`);
   });
-
-  // 5. Parsing des lignes de données
   return lines.slice(1).map(line => {
     const vals = line.split(sep);
     const obj = {};
     header.forEach((h, i) => {
-      let raw = (vals[i] || '').trim().replace(',', '.'); // On gère la virgule Excel
+      let raw = (vals[i] || '').trim().replace(',', '.');
       obj[h] = (raw !== '' && !isNaN(raw)) ? parseFloat(raw) : raw;
     });
     return obj;
   }).filter(r => r.date && typeof r.prix_gazole === 'number');
 }
 
+function renderMAE(mae, lag) {
+  const cts = (mae * 100).toFixed(1);
+  const maeEls = [
+    ['mae-val','mae-lag','mae-interpret','mae-quality'],
+    ['mae-val-2','mae-lag-2','mae-interpret-2','mae-quality-2']
+  ];
+  let quality, qualityDesc;
+  if(mae < 0.005)      { quality = 'Excellent'; qualityDesc = 'Erreur < 0.5 cts/L'; }
+  else if(mae < 0.010) { quality = 'Très bon'; qualityDesc = 'Erreur < 1 ct/L'; }
+  else if(mae < 0.020) { quality = 'Acceptable'; qualityDesc = 'Erreur < 2 cts/L'; }
+  else                  { quality = 'À surveiller'; qualityDesc = 'Erreur > 2 cts/L'; }
+
+  maeEls.forEach(([valId, lagId, interpId, qualId]) => {
+    const v = document.getElementById(valId);
+    const l = document.getElementById(lagId);
+    const i = document.getElementById(interpId);
+    const q = document.getElementById(qualId);
+    if(v) v.textContent = cts;
+    if(l) l.textContent = `Lag optimal : ${lag}j`;
+    if(i) i.textContent = `± ${cts} cts/L en moyenne`;
+    if(q) q.textContent = qualityDesc;
+  });
+}
+
 async function loadData(){
   const token = getToken();
   setStatus('loading', 'Chargement…');
   hideErr();
-  
   try {
     const [csvText, jsonText] = await Promise.all([
       fetchFile(CSV_PATH, token),
       fetchFile(JSN_PATH, token)
     ]);
-
-    // 1. On traite l'historique comme avant
     allData = parseCSV(csvText).sort((a,b) => a.date.localeCompare(b.date));
-
-    // 2. On traite la nouvelle réponse de l'IA XGBoost
-    const aiResponse = JSON.parse(jsonText); 
-    
-    // On extrait la liste des prédictions qui est dans la propriété .predictions
+    const aiResponse = JSON.parse(jsonText);
     predData = aiResponse.predictions.sort((a,b) => a.date.localeCompare(b.date));
-    
-    // On récupère aussi le score d'erreur pour l'afficher (optionnel)
     window.AI_ERROR = aiResponse.error_mae;
     window.AI_LAG = aiResponse.best_lag;
 
+    renderMAE(window.AI_ERROR, window.AI_LAG);
+
     const last = allData[allData.length - 1];
-    setStatus('ok', `Précision IA : ±${(window.AI_ERROR * 100).toFixed(1)} cts`);
-    
-    document.getElementById('sub-overview').textContent = 
-      `Dernière donnée : ${last.date} · Lag optimal : ${window.AI_LAG}j · Erreur : ${window.AI_ERROR}€`;
-    
+    setStatus('ok', `MAE ±${(window.AI_ERROR * 100).toFixed(1)} cts`);
+
     document.getElementById('no-data').style.display = 'none';
     document.getElementById('main-content').style.display = '';
-    
     setPeriod(currentPeriod, false);
     renderAll();
-
   } catch(e) {
-    setStatus('error', 'Erreur de structure JSON');
-    showErr("L'IA a changé de format : " + e.message);
+    setStatus('error', 'Erreur');
+    showErr(e.message);
     console.error(e);
   }
 }
 
 async function testConnection(){
   const token=getToken(), el=document.getElementById('test-result');
-  el.textContent='⏳ Test en cours…';
+  el.textContent='Test en cours…';
   try {
     const txt=await fetchFile(CSV_PATH,token);
     const lines=txt.trim().split('\n').filter(l=>l.trim());
-    el.innerHTML=`<span style="color:var(--green)">✓ Connexion OK</span> · ${lines.length-1} lignes lues · en-tête: <code>${lines[0].slice(0,80)}</code>`;
+    el.innerHTML=`<span style="color:var(--green)">✓ OK</span> · ${lines.length-1} lignes · en-tête: <code>${lines[0].slice(0,80)}</code>`;
   } catch(e){
     el.innerHTML=`<span style="color:var(--red)">✗ Échec</span> · ${e.message}`;
   }
 }
 
-// ── PERIOD ───────────────────────────────────────────────────────────────────
 function setPeriod(days, rerender=true){
   currentPeriod=days;
   document.querySelectorAll('.pp').forEach(p=>{
@@ -569,19 +798,23 @@ function setPeriod(days, rerender=true){
   if(rerender) renderAll();
 }
 
-// ── CHART HELPERS ────────────────────────────────────────────────────────────
-const FONT="'DM Mono',monospace";
-const C={accent:'#c85a22',blue:'#2563c8',green:'#1e9e5c',purple:'#7c3aed',orange:'#d97706',red:'#dc2626'};
-const GRID='#e0ddd5', TICK={font:{family:FONT,size:10},color:'#9c9890'};
+// ── CHART HELPERS ──
+const FONT="'IBM Plex Mono',monospace";
+const C={accent:'#c85a22',blue:'#2458b8',green:'#1a8f52',purple:'#7c3aed',orange:'#c47a0a',red:'#c0281e'};
+const GRID='rgba(0,0,0,.06)', TICK={font:{family:FONT,size:10},color:'#b0aea8'};
 
 function baseOpts(){
   return {
     responsive:true, maintainAspectRatio:true,
     interaction:{mode:'index',intersect:false},
-    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+      backgroundColor:'#111',titleColor:'#f9f8f6',bodyColor:'#b0aea8',
+      titleFont:{family:FONT,size:11},bodyFont:{family:FONT,size:11},
+      padding:10,cornerRadius:0,borderColor:'#333',borderWidth:1
+    }},
     scales:{
-      x:{ticks:{...TICK,maxTicksLimit:6},grid:{color:GRID}},
-      y:{ticks:TICK,grid:{color:GRID}}
+      x:{ticks:{...TICK,maxTicksLimit:6},grid:{color:GRID},border:{display:false}},
+      y:{ticks:TICK,grid:{color:GRID},border:{display:false}}
     }
   };
 }
@@ -593,7 +826,6 @@ function mk(id,type,data,opts){
   charts[id]=new Chart(ctx,{type,data,options:opts||baseOpts()});
 }
 
-// ── COMPUTATIONS ─────────────────────────────────────────────────────────────
 function computeRSI(prices,n=14){
   const out=Array(prices.length).fill(null);
   for(let i=n;i<prices.length;i++){
@@ -619,7 +851,6 @@ function pearson(a,b){
   return(da&&db)?num/(da*db):0;
 }
 
-// ── KPIs ─────────────────────────────────────────────────────────────────────
 function updateKPIs(){
   if(!fd.length) return;
   const last=fd[fd.length-1], prev=fd[fd.length-2];
@@ -651,15 +882,13 @@ function updateKPIs(){
     pd.textContent=`${s}${d.toFixed(3)} vs auj.`;
     pd.className='kpi-delta '+(d>0?'up':'dn');
   }
-  // spread decomp
   const tot=last.prix_gazole;
   document.getElementById('spr-decomp').innerHTML=`
     <div class="spr-row"><span class="spr-lbl">Brent/159</span><div class="spr-bg"><div class="spr-fill" style="width:${Math.min(100,bl/tot*100).toFixed(0)}%;background:var(--blue)"></div></div><span class="spr-val">${bl.toFixed(3)} €</span></div>
     <div class="spr-row"><span class="spr-lbl">Spread</span><div class="spr-bg"><div class="spr-fill" style="width:${Math.min(100,Math.max(0,sp/tot*100)).toFixed(0)}%;background:var(--accent)"></div></div><span class="spr-val">${sp.toFixed(3)} €</span></div>
-    <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono)">Total ${tot.toFixed(3)} €/L · Brent ${(bl/tot*100).toFixed(0)}% · Spread ${(sp/tot*100).toFixed(0)}%</div>`;
+    <div style="font-size:10px;color:var(--ink3);margin-top:6px;font-family:var(--mono)">Total ${tot.toFixed(3)} €/L · Brent ${(bl/tot*100).toFixed(0)}% · Spread ${(sp/tot*100).toFixed(0)}%</div>`;
 }
 
-// ── CHARTS ───────────────────────────────────────────────────────────────────
 function renderMain(){
   const labels=fd.map(d=>d.date);
   const gaz=fd.map(d=>d.prix_gazole);
@@ -673,7 +902,7 @@ function renderMain(){
     datasets:[
       {label:'Gazole',data:[...gaz,...Array(fut.length).fill(null)],borderColor:C.accent,borderWidth:2,pointRadius:0,tension:.3},
       {label:'Brent €/L',data:[...brent_l,...Array(fut.length).fill(null)],borderColor:C.blue,borderWidth:1.5,pointRadius:0,tension:.3},
-      {label:'Prévision',data:[...Array(labels.length-1).fill(null),bridge,...fut.map(p=>p.prix)],borderColor:C.orange,borderWidth:2.5,pointRadius:0,tension:.3,borderDash:[6,4],backgroundColor:'rgba(217,119,6,.08)',fill:true}
+      {label:'Prévision',data:[...Array(labels.length-1).fill(null),bridge,...fut.map(p=>p.prix)],borderColor:C.orange,borderWidth:2,pointRadius:0,tension:.3,borderDash:[6,4],backgroundColor:'rgba(196,122,10,.07)',fill:true}
     ]
   });
 }
@@ -681,7 +910,7 @@ function renderMain(){
 function renderSpread(){
   mk('c-spread','line',{
     labels:fd.map(d=>d.date),
-    datasets:[{label:'Spread',data:fd.map(d=>d.prix_gazole-d.brent_eur/159),borderColor:C.green,borderWidth:2,pointRadius:0,tension:.3,fill:true,backgroundColor:'rgba(30,158,92,.08)'}]
+    datasets:[{label:'Spread',data:fd.map(d=>d.prix_gazole-d.brent_eur/159),borderColor:C.green,borderWidth:2,pointRadius:0,tension:.3,fill:true,backgroundColor:'rgba(26,143,82,.07)'}]
   });
 }
 
@@ -692,21 +921,25 @@ function rsiChart(canvasId,badgeId){
   let cls='', lbl='—';
   if(last!==undefined){lbl=last.toFixed(1);cls=last>70?'bear':last<30?'bull':'';}
   document.getElementById(badgeId).textContent=lbl;
-  document.getElementById(badgeId).className='cc-badge '+cls;
+  document.getElementById(badgeId).className='panel-badge '+cls;
   mk(canvasId,'line',{
     labels:fd.map(d=>d.date),
-    datasets:[{label:'RSI',data:rsi,borderColor:C.purple,borderWidth:2,pointRadius:0,tension:.3,fill:true,backgroundColor:'rgba(124,58,237,.07)'}]
+    datasets:[{label:'RSI',data:rsi,borderColor:C.purple,borderWidth:2,pointRadius:0,tension:.3,fill:true,backgroundColor:'rgba(124,58,237,.06)'}]
   },{
     ...baseOpts(),
     scales:{
-      x:{ticks:{...TICK,maxTicksLimit:6},grid:{color:GRID}},
-      y:{min:0,max:100,ticks:TICK,grid:{color:GRID}}
+      x:{ticks:{...TICK,maxTicksLimit:6},grid:{color:GRID},border:{display:false}},
+      y:{min:0,max:100,ticks:TICK,grid:{color:GRID},border:{display:false}}
     },
     plugins:{
-      legend:{display:false},tooltip:{mode:'index',intersect:false},
+      legend:{display:false},tooltip:{mode:'index',intersect:false,
+        backgroundColor:'#111',titleColor:'#f9f8f6',bodyColor:'#b0aea8',
+        titleFont:{family:FONT,size:11},bodyFont:{family:FONT,size:11},
+        padding:10,cornerRadius:0
+      },
       annotation:{annotations:{
-        ob:{type:'line',yMin:70,yMax:70,borderColor:'rgba(220,38,38,.5)',borderWidth:1,borderDash:[4,3]},
-        os:{type:'line',yMin:30,yMax:30,borderColor:'rgba(30,158,92,.5)',borderWidth:1,borderDash:[4,3]}
+        ob:{type:'line',yMin:70,yMax:70,borderColor:'rgba(192,40,30,.4)',borderWidth:1,borderDash:[4,3]},
+        os:{type:'line',yMin:30,yMax:30,borderColor:'rgba(26,143,82,.4)',borderWidth:1,borderDash:[4,3]}
       }}
     }
   });
@@ -726,47 +959,38 @@ function renderBollinger(){
   let sig='Neutre',cls='';
   if(lu&&lp>lu){sig='Surachat';cls='bear';}else if(ll&&lp<ll){sig='Survente';cls='bull';}
   document.getElementById('bb-badge').textContent=sig;
-  document.getElementById('bb-badge').className='cc-badge '+cls;
-  mk('c-bb','line',{
-    labels,
-    datasets:[
-      {label:'Upper',data:upper,borderColor:'rgba(200,90,34,.4)',borderWidth:1,pointRadius:0,fill:'+1',backgroundColor:'rgba(200,90,34,.07)',tension:.3},
-      {label:'Lower',data:lower,borderColor:'rgba(200,90,34,.4)',borderWidth:1,pointRadius:0,fill:false,tension:.3},
-      {label:'MA20',data:mid,borderColor:C.blue,borderWidth:1.5,pointRadius:0,borderDash:[4,3],fill:false,tension:.3},
-      {label:'Gazole',data:prices,borderColor:C.accent,borderWidth:2,pointRadius:0,fill:false,tension:.3}
-    ]
-  });
+  document.getElementById('bb-badge').className='panel-badge '+cls;
+  mk('c-bb','line',{labels,datasets:[
+    {label:'Upper',data:upper,borderColor:'rgba(200,90,34,.35)',borderWidth:1,pointRadius:0,fill:'+1',backgroundColor:'rgba(200,90,34,.05)',tension:.3},
+    {label:'Lower',data:lower,borderColor:'rgba(200,90,34,.35)',borderWidth:1,pointRadius:0,fill:false,tension:.3},
+    {label:'MA20',data:mid,borderColor:C.blue,borderWidth:1.5,pointRadius:0,borderDash:[4,3],fill:false,tension:.3},
+    {label:'Gazole',data:prices,borderColor:C.accent,borderWidth:2,pointRadius:0,fill:false,tension:.3}
+  ]});
 }
 
 function renderMA(){
   const prices=fd.map(d=>d.prix_gazole), labels=fd.map(d=>d.date);
   const ma=n=>prices.map((_,i)=>i<n-1?null:prices.slice(i-n+1,i+1).reduce((a,b)=>a+b,0)/n);
-  mk('c-ma','line',{
-    labels,
-    datasets:[
-      {label:'Gazole',data:prices,borderColor:C.accent,borderWidth:2,pointRadius:0,tension:.3},
-      {label:'MA7',data:ma(7),borderColor:C.purple,borderWidth:1.5,pointRadius:0,tension:.3},
-      {label:'MA30',data:ma(30),borderColor:C.green,borderWidth:1.5,pointRadius:0,tension:.3},
-      {label:'MA90',data:ma(90),borderColor:C.blue,borderWidth:1.5,pointRadius:0,borderDash:[4,3],tension:.3}
-    ]
-  });
+  mk('c-ma','line',{labels,datasets:[
+    {label:'Gazole',data:prices,borderColor:C.accent,borderWidth:2,pointRadius:0,tension:.3},
+    {label:'MA7',data:ma(7),borderColor:C.purple,borderWidth:1.5,pointRadius:0,tension:.3},
+    {label:'MA30',data:ma(30),borderColor:C.green,borderWidth:1.5,pointRadius:0,tension:.3},
+    {label:'MA90',data:ma(90),borderColor:C.blue,borderWidth:1.5,pointRadius:0,borderDash:[4,3],tension:.3}
+  ]});
 }
 
 function renderBrent(){
-  mk('c-brent','line',{
-    labels:fd.map(d=>d.date),
-    datasets:[
-      {label:'USD',data:fd.map(d=>d.brent_usd),borderColor:C.blue,borderWidth:2,pointRadius:0,tension:.3},
-      {label:'EUR',data:fd.map(d=>d.brent_eur),borderColor:C.green,borderWidth:2,pointRadius:0,tension:.3}
-    ]
-  });
+  mk('c-brent','line',{labels:fd.map(d=>d.date),datasets:[
+    {label:'USD',data:fd.map(d=>d.brent_usd),borderColor:C.blue,borderWidth:2,pointRadius:0,tension:.3},
+    {label:'EUR',data:fd.map(d=>d.brent_eur),borderColor:C.green,borderWidth:2,pointRadius:0,tension:.3}
+  ]});
 }
 
 function renderEURUSD(){
-  mk('c-eurusd','line',{
-    labels:fd.map(d=>d.date),
-    datasets:[{label:'EUR/USD',data:fd.map(d=>d.brent_usd&&d.brent_eur?d.brent_usd/d.brent_eur:null),borderColor:C.purple,borderWidth:2,pointRadius:0,tension:.3,fill:true,backgroundColor:'rgba(124,58,237,.06)'}]
-  });
+  mk('c-eurusd','line',{labels:fd.map(d=>d.date),datasets:[{
+    label:'EUR/USD',data:fd.map(d=>d.brent_usd&&d.brent_eur?d.brent_usd/d.brent_eur:null),
+    borderColor:C.purple,borderWidth:2,pointRadius:0,tension:.3,fill:true,backgroundColor:'rgba(124,58,237,.05)'
+  }]});
 }
 
 function renderMACD(){
@@ -778,15 +1002,12 @@ function renderMACD(){
   const lm=macd.filter(v=>v!==null).at(-1),ls=sig.filter(v=>v!==null).at(-1);
   const cls=lm>ls?'bull':'bear';
   document.getElementById('macd-badge').textContent=lm>ls?'Haussier':'Baissier';
-  document.getElementById('macd-badge').className='cc-badge '+cls;
-  mk('c-macd','bar',{
-    labels,
-    datasets:[
-      {type:'bar',label:'Hist',data:hist,backgroundColor:hist.map(v=>(v||0)>=0?'rgba(30,158,92,.5)':'rgba(220,38,38,.5)'),borderWidth:0},
-      {type:'line',label:'MACD',data:macd,borderColor:C.blue,borderWidth:1.5,pointRadius:0,tension:.3},
-      {type:'line',label:'Signal',data:sig,borderColor:C.accent,borderWidth:1.5,pointRadius:0,tension:.3,borderDash:[3,3]}
-    ]
-  });
+  document.getElementById('macd-badge').className='panel-badge '+cls;
+  mk('c-macd','bar',{labels,datasets:[
+    {type:'bar',label:'Hist',data:hist,backgroundColor:hist.map(v=>(v||0)>=0?'rgba(26,143,82,.45)':'rgba(192,40,30,.45)'),borderWidth:0},
+    {type:'line',label:'MACD',data:macd,borderColor:C.blue,borderWidth:1.5,pointRadius:0,tension:.3},
+    {type:'line',label:'Signal',data:sig,borderColor:C.accent,borderWidth:1.5,pointRadius:0,tension:.3,borderDash:[3,3]}
+  ]});
 }
 
 function renderCorr(){
@@ -798,14 +1019,14 @@ function renderCorr(){
   });
   const lc=corr.filter(v=>v!==null).at(-1);
   document.getElementById('corr-badge').textContent=lc!==undefined?lc.toFixed(3):'—';
-  mk('c-corr','line',{
-    labels,
-    datasets:[{label:'Corr',data:corr,borderColor:C.green,borderWidth:2,pointRadius:0,tension:.3,fill:true,backgroundColor:'rgba(30,158,92,.07)'}]
-  },{
+  mk('c-corr','line',{labels,datasets:[{
+    label:'Corr',data:corr,borderColor:C.green,borderWidth:2,pointRadius:0,tension:.3,
+    fill:true,backgroundColor:'rgba(26,143,82,.06)'
+  }]},{
     ...baseOpts(),
     scales:{
-      x:{ticks:{...TICK,maxTicksLimit:6},grid:{color:GRID}},
-      y:{min:-1,max:1,ticks:TICK,grid:{color:GRID}}
+      x:{ticks:{...TICK,maxTicksLimit:6},grid:{color:GRID},border:{display:false}},
+      y:{min:-1,max:1,ticks:TICK,grid:{color:GRID},border:{display:false}}
     }
   });
 }
@@ -821,10 +1042,10 @@ function renderVol(){
   });
   const lv=vol.filter(v=>v!==null).at(-1);
   document.getElementById('vol-badge').textContent=lv!==undefined?lv.toFixed(1)+' %':'—';
-  mk('c-vol','line',{
-    labels,
-    datasets:[{label:'Vol',data:vol,borderColor:C.orange,borderWidth:2,pointRadius:0,tension:.3,fill:true,backgroundColor:'rgba(217,119,6,.08)'}]
-  });
+  mk('c-vol','line',{labels,datasets:[{
+    label:'Vol',data:vol,borderColor:C.orange,borderWidth:2,pointRadius:0,tension:.3,
+    fill:true,backgroundColor:'rgba(196,122,10,.07)'
+  }]});
 }
 
 function renderPredChart(){
@@ -832,13 +1053,10 @@ function renderPredChart(){
   const fut=predData.filter(p=>p.date>lastDate);
   const bridge=fd[fd.length-1]?.prix_gazole;
   const allLabels=[...ctx.map(d=>d.date),...fut.map(p=>p.date)];
-  mk('c-pred','line',{
-    labels:allLabels,
-    datasets:[
-      {label:'Historique',data:[...ctx.map(d=>d.prix_gazole),...Array(fut.length).fill(null)],borderColor:C.accent,borderWidth:2,pointRadius:0,tension:.3},
-      {label:'Prévision',data:[...Array(ctx.length-1).fill(null),bridge,...fut.map(p=>p.prix)],borderColor:C.orange,borderWidth:2.5,pointRadius:3,tension:.3,borderDash:[5,3],backgroundColor:'rgba(217,119,6,.1)',fill:true}
-    ]
-  });
+  mk('c-pred','line',{labels:allLabels,datasets:[
+    {label:'Historique',data:[...ctx.map(d=>d.prix_gazole),...Array(fut.length).fill(null)],borderColor:C.accent,borderWidth:2,pointRadius:0,tension:.3},
+    {label:'Prévision',data:[...Array(ctx.length-1).fill(null),bridge,...fut.map(p=>p.prix)],borderColor:C.orange,borderWidth:2,pointRadius:3,tension:.3,borderDash:[5,3],backgroundColor:'rgba(196,122,10,.08)',fill:true}
+  ]});
 }
 
 function renderPredTable(){
@@ -848,7 +1066,7 @@ function renderPredTable(){
     const d=p.prix-lastKnown,s=d>=0?'+':'',cls=d>=0?'pos':'neg';
     return `<tr><td>${p.date}</td><td>${p.prix.toFixed(3)}</td><td class="${cls}">${s}${d.toFixed(3)}</td></tr>`;
   }).join('');
-  document.getElementById('pred-tbody').innerHTML=rows||'<tr><td colspan="3" style="padding:20px 0;text-align:center;color:var(--text3)">Aucune prévision</td></tr>';
+  document.getElementById('pred-tbody').innerHTML=rows||'<tr><td colspan="3" style="padding:20px 0;text-align:center;color:var(--ink3)">Aucune prévision</td></tr>';
 }
 
 function renderIndTable(){
@@ -904,26 +1122,20 @@ function renderAll(){
   renderPredTable();
 }
 
-// ── UI HELPERS ───────────────────────────────────────────────────────────────
 function setStatus(state,txt){
-  document.getElementById('dot').className='dot '+state;
+  document.getElementById('dot').className='status-dot '+state;
   document.getElementById('status-txt').textContent=txt;
 }
 function showErr(msg){const e=document.getElementById('err-box');e.textContent='⚠ '+msg;e.classList.add('show');}
 function hideErr(){document.getElementById('err-box').classList.remove('show');}
 
-// ── INIT ─────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',()=>{
   renderTokenStatus();
   document.getElementById('main-content').style.display='none';
   document.getElementById('no-data').style.display='block';
   const t=getToken();
-  if(t){
-    loadData();
-  } else {
-    setStatus('','Token requis');
-    goPage('parametres');
-  }
+  if(t){ loadData(); }
+  else { setStatus('','Token requis'); goPage('parametres'); }
 });
 </script>
 </body>
