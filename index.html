@@ -751,13 +751,14 @@ async function loadData(){
     allData = parseCSV(csvText).sort((a,b) => a.date.localeCompare(b.date));
     const aiResponse = JSON.parse(jsonText);
     predData = aiResponse.predictions.sort((a,b) => a.date.localeCompare(b.date));
-    window.AI_ERROR = aiResponse.error_mae;
-    window.AI_LAG = aiResponse.best_lag;
+    window.AI_ERROR = aiResponse.mae_moyen ?? aiResponse.error_mae ?? null;
+    window.AI_LAG = aiResponse.best_lag ?? '—';
 
-    renderMAE(window.AI_ERROR, window.AI_LAG);
+    if(window.AI_ERROR !== null) renderMAE(window.AI_ERROR, window.AI_LAG);
 
     const last = allData[allData.length - 1];
-    setStatus('ok', `MAE ±${(window.AI_ERROR * 100).toFixed(1)} cts`);
+    const maeLabel = window.AI_ERROR !== null ? `MAE ±${(window.AI_ERROR * 100).toFixed(1)} cts` : 'Chargé';
+    setStatus('ok', maeLabel);
 
     document.getElementById('no-data').style.display = 'none';
     document.getElementById('main-content').style.display = '';
@@ -1018,7 +1019,9 @@ function renderCorr(){
     return pearson(w.map(x=>x.brent_eur),w.map(x=>x.prix_gazole));
   });
   const lc=corr.filter(v=>v!==null).at(-1);
+  const corrCls = lc!==undefined ? (lc>0.7?'bull':lc>0.4?'neutral':'bear') : '';
   document.getElementById('corr-badge').textContent=lc!==undefined?lc.toFixed(3):'—';
+  document.getElementById('corr-badge').className='panel-badge '+corrCls;
   mk('c-corr','line',{labels,datasets:[{
     label:'Corr',data:corr,borderColor:C.green,borderWidth:2,pointRadius:0,tension:.3,
     fill:true,backgroundColor:'rgba(26,143,82,.06)'
@@ -1053,9 +1056,13 @@ function renderPredChart(){
   const fut=predData.filter(p=>p.date>lastDate);
   const bridge=fd[fd.length-1]?.prix_gazole;
   const allLabels=[...ctx.map(d=>d.date),...fut.map(p=>p.date)];
+  const nHist=ctx.length, nFut=fut.length;
+  const nullHist=Array(nHist-1).fill(null);
   mk('c-pred','line',{labels:allLabels,datasets:[
-    {label:'Historique',data:[...ctx.map(d=>d.prix_gazole),...Array(fut.length).fill(null)],borderColor:C.accent,borderWidth:2,pointRadius:0,tension:.3},
-    {label:'Prévision',data:[...Array(ctx.length-1).fill(null),bridge,...fut.map(p=>p.prix)],borderColor:C.orange,borderWidth:2,pointRadius:3,tension:.3,borderDash:[5,3],backgroundColor:'rgba(196,122,10,.08)',fill:true}
+    {label:'Historique',data:[...ctx.map(d=>d.prix_gazole),...Array(nFut).fill(null)],borderColor:C.accent,borderWidth:2,pointRadius:0,tension:.3},
+    {label:'Borne haute',data:[...nullHist,bridge,...fut.map(p=>p.haut??null)],borderColor:'rgba(196,122,10,.25)',borderWidth:1,pointRadius:0,tension:.3,fill:'+1',backgroundColor:'rgba(196,122,10,.08)',borderDash:[3,3]},
+    {label:'Borne basse',data:[...nullHist,bridge,...fut.map(p=>p.bas??null)],borderColor:'rgba(196,122,10,.25)',borderWidth:1,pointRadius:0,tension:.3,fill:false,borderDash:[3,3]},
+    {label:'Prévision',data:[...nullHist,bridge,...fut.map(p=>p.prix)],borderColor:C.orange,borderWidth:2,pointRadius:3,tension:.3}
   ]});
 }
 
@@ -1095,7 +1102,7 @@ function renderIndTable(){
     ['MACD 12/26/9', lm!==undefined?lm.toFixed(4):'—', lm>ls?['bull','Haussier']:['bear','Baissier']],
     ['Bollinger 20j', `${bbL.toFixed(3)} – ${bbU.toFixed(3)}`, [bbC,bbS]],
     ['Spread raffinage', sp.toFixed(3)+' €/L', sp>0.8?['warn','Élevé']:['bull','Normal']],
-    ['Corrélation 30j', cV!==null?cV.toFixed(3):'—', cV>0.7?['bull','Forte']:cV>0.4?['neutral','Modérée']:['bear','Faible']],
+    ['Corrélation 30j', cV!==null?cV.toFixed(3):'—', cV!==null&&cV>0.7?['bull','Forte']:cV!==null&&cV>0.4?['neutral','Modérée']:cV!==null?['bear','Faible']:['neutral','—']],
     ['Volatilité ann.', vV.toFixed(1)+' %', vV>20?['warn','Élevée']:['neutral','Normale']],
     ['EUR/USD impl.', eu.toFixed(4), ['neutral','info']],
   ];
